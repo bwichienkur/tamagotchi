@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import pg from "pg";
 import { createSlug } from "../src/lib/slug";
 import { getDatabaseUrl, getMigrationDatabaseUrl } from "../src/lib/db";
+import { TamaShellImporter } from "../src/lib/importers/tamashell";
 
 const pool = new pg.Pool({ connectionString: getMigrationDatabaseUrl() ?? getDatabaseUrl() });
 const adapter = new PrismaPg(pool);
@@ -15,35 +16,7 @@ const FAMILIES = [
   { name: "Connection", slug: "connection", sortOrder: 2 },
   { name: "Modern", slug: "modern", sortOrder: 3 },
   { name: "Classic Remakes", slug: "classic-remakes", sortOrder: 4 },
-];
-
-const DEVICE_MODELS = [
-  { name: "Tamagotchi P1", family: "vintage", year: 1996, generation: "P1" },
-  { name: "Tamagotchi P2", family: "vintage", year: 1997, generation: "P2" },
-  { name: "Tamagotchi Angel", family: "vintage", year: 1997, generation: "Angel" },
-  { name: "Tamagotchi Connection Version 1", family: "connection", year: 2004, generation: "Connection" },
-  { name: "Tamagotchi Connection v2", family: "connection", year: 2005, generation: "Connection" },
-  { name: "Tamagotchi Connection v3", family: "connection", year: 2006, generation: "Connection" },
-  { name: "Tamagotchi Connection v4", family: "connection", year: 2007, generation: "Connection" },
-  { name: "Tamagotchi Connection v4.5", family: "connection", year: 2008, generation: "Connection" },
-  { name: "Tamagotchi Connection v5", family: "connection", year: 2008, generation: "Connection" },
-  { name: "Tamagotchi Connection v5.5", family: "connection", year: 2009, generation: "Connection" },
-  { name: "Tamagotchi Connection v6", family: "connection", year: 2010, generation: "Connection" },
-  { name: "Tamagotchi Plus Color", family: "modern", year: 2008, generation: "Plus Color" },
-  { name: "Tamagotchi iD", family: "modern", year: 2009, generation: "iD" },
-  { name: "Tamagotchi iD L", family: "modern", year: 2010, generation: "iD L" },
-  { name: "Tamagotchi P's", family: "modern", year: 2012, generation: "P's" },
-  { name: "Tamagotchi Friends", family: "modern", year: 2013, generation: "Friends" },
-  { name: "Tamagotchi 4U", family: "modern", year: 2014, generation: "4U" },
-  { name: "Tamagotchi 4U+", family: "modern", year: 2015, generation: "4U+" },
-  { name: "Tamagotchi m!x", family: "modern", year: 2016, generation: "m!x" },
-  { name: "Tamagotchi Meets / On", family: "modern", year: 2018, generation: "Meets/On" },
-  { name: "Tamagotchi Pix", family: "modern", year: 2021, generation: "Pix" },
-  { name: "Tamagotchi Smart", family: "modern", year: 2021, generation: "Smart" },
-  { name: "Tamagotchi Uni", family: "modern", year: 2023, generation: "Uni" },
-  { name: "Tamagotchi Paradise", family: "modern", year: 2025, generation: "Paradise" },
-  { name: "Original Tamagotchi", family: "classic-remakes", year: 2017, generation: "Remake" },
-  { name: "Tamagotchi Connection 20th Anniversary", family: "classic-remakes", year: 2024, generation: "Connection Remake" },
+  { name: "Others", slug: "others", sortOrder: 5 },
 ];
 
 const CONNECTION_V1_SECTIONS = [
@@ -73,48 +46,7 @@ const CONNECTION_V1_SECTIONS = [
         title: "Games",
         content: `<p>Three built-in games help increase happiness and can earn points. Playing games is essential for keeping your Tamagotchi healthy and happy.</p>`,
       },
-      {
-        id: "toilet",
-        title: "Toilet",
-        content: `<p>When your Tamagotchi makes a mess, you must clean it up using the toilet icon. Neglecting this can lead to sickness.</p>`,
-      },
-      {
-        id: "training",
-        title: "Training",
-        content: `<p>Discipline your Tamagotchi when it misbehaves by selecting the discipline icon. Proper training affects which adult character your Tamagotchi becomes.</p>`,
-      },
-      {
-        id: "tamacom",
-        title: "TamaCom",
-        content: `<p>The infrared port allows connection with other Tamagotchi devices for multiplayer features, gift exchange, and breeding.</p>`,
-      },
-      {
-        id: "lights",
-        title: "Lights",
-        content: `<p>Toggle the room lights on and off. Your Tamagotchi needs rest when the lights are off, and will wake when they turn back on.</p>`,
-      },
-      {
-        id: "friends-list",
-        title: "Friends List",
-        content: `<p>Keep track of Tamagotchis you've connected with. The friends list stores information about connected characters.</p>`,
-      },
-      {
-        id: "items",
-        title: "Items",
-        content: `<p>Special items can be obtained through connections and affect gameplay. Items are stored in your inventory for use.</p>`,
-      },
-      {
-        id: "animations",
-        title: "Animations",
-        content: `<p>The Connection v1 features various character animations including eating, playing, sleeping, and special connection animations.</p>`,
-      },
     ],
-  },
-  {
-    id: "rom-versions",
-    title: "ROM Versions",
-    content: `<p>Several ROM versions exist for the Connection v1, with minor differences in gameplay and character sets between regions and production runs.</p>
-<table><thead><tr><th>Version</th><th>Region</th><th>Notes</th></tr></thead><tbody><tr><td>v1.0</td><td>US</td><td>Initial release</td></tr><tr><td>v1.1</td><td>US/EU</td><td>Bug fixes</td></tr><tr><td>v1.0</td><td>JP</td><td>Keitai Kaitsuu variant</td></tr></tbody></table>`,
   },
   {
     id: "gallery",
@@ -122,14 +54,9 @@ const CONNECTION_V1_SECTIONS = [
     content: `<p>Official shell designs and packaging for the Tamagotchi Connection Version 1.</p>`,
   },
   {
-    id: "trivia",
-    title: "Trivia",
-    content: `<ul><li>The Connection v1 was the first Tamagotchi to feature infrared connectivity in the international market.</li><li>Some shell designs are considered rare and command premium prices among collectors.</li><li>The device was marketed as "Tamagotchi Connection" in English-speaking regions.</li></ul>`,
-  },
-  {
     id: "references",
     title: "References",
-    content: `<ol><li><a href="https://www.tamashell.com">TamaShell</a> — Shell catalog reference</li><li>Bandai product documentation</li></ol>`,
+    content: `<ol><li><a href="https://www.tamashell.com/connectionv1">TamaShell</a> — Shell catalog reference</li></ol>`,
   },
 ];
 
@@ -138,7 +65,7 @@ async function main() {
 
   const user = await prisma.user.upsert({
     where: { email: "demo@tamadex.app" },
-    update: {},
+    update: { passwordHash, role: "admin", name: "Bright" },
     create: {
       email: "demo@tamadex.app",
       name: "Bright",
@@ -150,139 +77,121 @@ async function main() {
   for (const family of FAMILIES) {
     await prisma.deviceFamily.upsert({
       where: { slug: family.slug },
-      update: {},
+      update: { name: family.name, sortOrder: family.sortOrder },
       create: family,
     });
   }
 
-  const familyMap = Object.fromEntries(
-    (await prisma.deviceFamily.findMany()).map((f) => [f.slug, f.id])
-  );
-
-  const modelMap: Record<string, string> = {};
-
-  for (const model of DEVICE_MODELS) {
-    const slug = createSlug(model.name);
-    const created = await prisma.deviceModel.upsert({
-      where: { slug },
-      update: {},
-      create: {
-        name: model.name,
-        slug,
-        familyId: familyMap[model.family],
-        releaseYear: model.year,
-        generation: model.generation,
-        manufacturer: "Bandai",
-        regions: ["Japan", "North America", "Europe"],
-        alternateNames: model.name.includes("Version 1")
-          ? ["Tamagotchi Connection v1", "Connection V1", "Keitai Kaitsuu Tamagotchi Plus"]
-          : [],
-        description: `${model.name} — part of the ${model.generation} generation of Tamagotchi virtual pets.`,
-      },
-    });
-    modelMap[model.name] = created.id;
+  if (process.env.SKIP_TAMASHELL_IMPORT !== "true") {
+    console.log("Importing devices and shells from TamaShell...");
+    const importer = new TamaShellImporter();
+    const result = await importer.importAll();
+    console.log(
+      `TamaShell import: ${result.devices} devices processed, ${result.shells} shells added, ${result.skipped} skipped`
+    );
+  } else {
+    console.log("Skipping TamaShell import (SKIP_TAMASHELL_IMPORT=true)");
   }
 
-  const connV1Id = modelMap["Tamagotchi Connection Version 1"];
-
-  await prisma.deviceProperty.createMany({
-    data: [
-      { deviceModelId: connV1Id, group: "Details", label: "Series", value: "Tamagotchi Connection", sortOrder: 1 },
-      { deviceModelId: connV1Id, group: "Details", label: "Manufacturer", value: "Bandai", sortOrder: 2 },
-      { deviceModelId: connV1Id, group: "Details", label: "Release", value: "2004", sortOrder: 3 },
-      { deviceModelId: connV1Id, group: "Details", label: "Region", value: "Japan, North America, Europe", sortOrder: 4 },
-      { deviceModelId: connV1Id, group: "Technical", label: "Screen", value: "32 × 16 pixels", sortOrder: 1 },
-      { deviceModelId: connV1Id, group: "Technical", label: "Battery", value: "CR2032", sortOrder: 2 },
-      { deviceModelId: connV1Id, group: "Technical", label: "Connectivity", value: "Infrared", sortOrder: 3 },
-      { deviceModelId: connV1Id, group: "Related", label: "Successor", value: "Tamagotchi Connection v2", sortOrder: 1 },
-    ],
-    skipDuplicates: true,
+  const connV1 = await prisma.deviceModel.findFirst({
+    where: {
+      OR: [
+        { slug: "tamagotchi-connection-v1" },
+        { name: { equals: "Tamagotchi Connection v1", mode: "insensitive" } },
+        { name: { contains: "Connection Version 1", mode: "insensitive" } },
+      ],
+    },
   });
 
-  const demoShells = [
-    { name: "Pink with Ice Cream", region: "North America", year: 2004 },
-    { name: "Translucent Blue", region: "Japan", year: 2004 },
-    { name: "White with Stars", region: "Europe", year: 2004 },
-  ];
+  if (connV1) {
+    await prisma.deviceModel.update({
+      where: { id: connV1.id },
+      data: {
+        alternateNames: [
+          "Tamagotchi Connection Version 1",
+          "Connection V1",
+          "Keitai Kaitsuu Tamagotchi Plus",
+        ],
+        releaseYear: connV1.releaseYear ?? 2004,
+        generation: connV1.generation ?? "Connection",
+        description:
+          connV1.description ??
+          "The Tamagotchi Connection Version 1 is a virtual pet device released by Bandai in 2004.",
+      },
+    });
 
-  for (const shell of demoShells) {
-    const slug = createSlug(shell.name);
-    await prisma.shell.upsert({
-      where: { deviceModelId_slug: { deviceModelId: connV1Id, slug } },
+    await prisma.deviceProperty.createMany({
+      data: [
+        { deviceModelId: connV1.id, group: "Details", label: "Series", value: "Tamagotchi Connection", sortOrder: 1 },
+        { deviceModelId: connV1.id, group: "Details", label: "Manufacturer", value: "Bandai", sortOrder: 2 },
+        { deviceModelId: connV1.id, group: "Details", label: "Release", value: "2004", sortOrder: 3 },
+      ],
+      skipDuplicates: true,
+    });
+
+    const wikiPage = await prisma.wikiPage.upsert({
+      where: { slug: "tamagotchi-connection-v1" },
       update: {},
       create: {
-        deviceModelId: connV1Id,
-        name: shell.name,
-        slug,
-        region: shell.region,
-        year: shell.year,
-        sourceName: "Demo",
-        notes: "Placeholder demo shell entry",
+        title: "Tamagotchi Connection Version 1",
+        slug: "tamagotchi-connection-v1",
+        deviceModelId: connV1.id,
+        pageType: WikiPageType.DEVICE,
+        summary:
+          "The Tamagotchi Connection Version 1 is a virtual pet device released by Bandai in 2004. It was the first Tamagotchi in the Connection series to feature infrared connectivity for multiplayer features.",
+        sections: CONNECTION_V1_SECTIONS,
+        createdById: user.id,
+        updatedById: user.id,
+      },
+    });
+
+    await prisma.wikiRevision.create({
+      data: {
+        wikiPageId: wikiPage.id,
+        title: wikiPage.title,
+        summary: wikiPage.summary,
+        sections: CONNECTION_V1_SECTIONS,
+        editedById: user.id,
+        editSummary: "Initial page",
       },
     });
   }
 
-  const connV3Id = modelMap["Tamagotchi Connection v3"];
-  const blueWavesShell = await prisma.shell.upsert({
-    where: { deviceModelId_slug: { deviceModelId: connV3Id, slug: "blue-waves" } },
-    update: {},
-    create: {
-      deviceModelId: connV3Id,
-      name: "Blue Waves",
-      slug: "blue-waves",
-      region: "North America",
-      year: 2006,
-      sourceName: "Demo",
-    },
+  const connV3 = await prisma.deviceModel.findFirst({
+    where: { name: { equals: "Tamagotchi Connection v3", mode: "insensitive" } },
   });
 
-  await prisma.ownedDevice.upsert({
-    where: { slug: "blue-waves-connection-v3-demo" },
-    update: {},
-    create: {
-      userId: user.id,
-      deviceModelId: connV3Id,
-      shellId: blueWavesShell.id,
-      slug: "blue-waves-connection-v3-demo",
-      nickname: "My Blue Waves",
-      conditionBadge: ConditionBadge.NIB,
-      showMoreInfo:
-        "I bought this at a convention in Orlando. It has the original packaging and was a great find!",
-      favorite: true,
-      currentlyRunning: true,
-      workingStatus: "WORKING",
-      purchaseDate: new Date("2026-06-05"),
-      purchasePrice: 45.0,
-      purchasedFrom: "Tamagotchi Convention Orlando",
-    },
-  });
+  if (connV3) {
+    const blueWavesShell = await prisma.shell.findFirst({
+      where: {
+        deviceModelId: connV3.id,
+        name: { contains: "Blue", mode: "insensitive" },
+      },
+    });
 
-  const wikiPage = await prisma.wikiPage.upsert({
-    where: { slug: "tamagotchi-connection-v1" },
-    update: {},
-    create: {
-      title: "Tamagotchi Connection Version 1",
-      slug: "tamagotchi-connection-v1",
-      deviceModelId: connV1Id,
-      pageType: WikiPageType.DEVICE,
-      summary:
-        "The Tamagotchi Connection Version 1 is a virtual pet device released by Bandai in 2004. It was the first Tamagotchi in the Connection series to feature infrared connectivity for multiplayer features.",
-      sections: CONNECTION_V1_SECTIONS,
-      createdById: user.id,
-      updatedById: user.id,
-    },
-  });
-
-  await prisma.wikiRevision.create({
-    data: {
-      wikiPageId: wikiPage.id,
-      title: wikiPage.title,
-      summary: wikiPage.summary,
-      sections: CONNECTION_V1_SECTIONS,
-      editedById: user.id,
-      editSummary: "Initial page",
-    },
-  });
+    if (blueWavesShell) {
+      await prisma.ownedDevice.upsert({
+        where: { slug: "blue-waves-connection-v3-demo" },
+        update: {},
+        create: {
+          userId: user.id,
+          deviceModelId: connV3.id,
+          shellId: blueWavesShell.id,
+          slug: "blue-waves-connection-v3-demo",
+          nickname: "My Blue Waves",
+          conditionBadge: ConditionBadge.NIB,
+          showMoreInfo:
+            "I bought this at a convention in Orlando. It has the original packaging and was a great find!",
+          favorite: true,
+          currentlyRunning: true,
+          workingStatus: "WORKING",
+          purchaseDate: new Date("2026-06-05"),
+          purchasePrice: 45.0,
+          purchasedFrom: "Tamagotchi Convention Orlando",
+        },
+      });
+    }
+  }
 
   console.log("Seed completed. Demo user: demo@tamadex.app / demo1234");
 }
