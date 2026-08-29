@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
+import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function DeviceLibraryPage({
@@ -51,18 +52,16 @@ export default async function DeviceLibraryPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-900">Device Library</h1>
-        <p className="mt-1 text-stone-500">
-          Canonical database of Tamagotchi models
-        </p>
-      </div>
+      <PageHeader
+        title="Device Library"
+        subtitle="Canonical database of Tamagotchi models"
+      />
 
       <div className="mb-6 flex flex-wrap gap-2">
         <Link
           href="/devices"
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-            !familySlug ? "bg-tama-cyan/10 text-tama-cyan" : "text-stone-600 hover:bg-stone-100"
+          className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
+            !familySlug ? "bg-gradient-to-r from-tama-cyan/20 to-tama-pink/15 text-tama-cyan shadow-sm" : "text-stone-600 hover:bg-white/80"
           }`}
         >
           All
@@ -71,10 +70,10 @@ export default async function DeviceLibraryPage({
           <Link
             key={f.id}
             href={`/devices?family=${f.slug}`}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
               familySlug === f.slug
-                ? "bg-tama-cyan/10 text-tama-cyan"
-                : "text-stone-600 hover:bg-stone-100"
+                ? "bg-gradient-to-r from-tama-cyan/20 to-tama-pink/15 text-tama-cyan shadow-sm"
+                : "text-stone-600 hover:bg-white/80"
             }`}
           >
             {f.name}
@@ -84,7 +83,7 @@ export default async function DeviceLibraryPage({
 
       {filteredFamilies.map((family) => (
         <section key={family.id} className="mb-12">
-          <h2 className="mb-4 text-2xl font-semibold text-stone-800">{family.name}</h2>
+          <h2 className="mb-4 font-display text-2xl font-bold text-stone-800">{family.name}</h2>
           {family.description && (
             <p className="mb-6 text-stone-500">{family.description}</p>
           )}
@@ -94,22 +93,22 @@ export default async function DeviceLibraryPage({
               const imageUrl = model.heroImage ?? model.shells[0]?.primaryImage ?? null;
               return (
                 <Link key={model.id} href={`/devices/${model.slug}`}>
-                  <Card className="h-full transition-shadow hover:shadow-md">
+                  <Card className="cute-card h-full">
                     {imageUrl ? (
-                      <div className="aspect-video overflow-hidden bg-stone-50">
+                      <div className="aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-2">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={imageUrl}
                           alt={model.name}
-                          className="h-full w-full object-contain p-3"
+                          className="h-full w-full rounded-xl object-contain p-2"
                           loading="lazy"
                         />
                       </div>
                     ) : (
-                      <div className="aspect-video bg-gradient-to-br from-stone-50 to-stone-100" />
+                      <div className="aspect-video bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10" />
                     )}
                     <CardContent className="pt-4">
-                      <h3 className="font-semibold text-stone-900">{model.name}</h3>
+                      <h3 className="font-display font-bold text-stone-900">{model.name}</h3>
                       <p className="text-sm text-stone-500">
                         {model.releaseYear ?? "—"}
                       </p>

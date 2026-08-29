@@ -34,18 +34,20 @@ export function WikiInfobox({
   return (
     <aside
       className={cn(
-        "overflow-hidden rounded-2xl border border-stone-200/80 bg-gradient-to-b from-white to-stone-50/50 shadow-sm",
+        "overflow-hidden rounded-[1.35rem] border-2 border-white/80 bg-gradient-to-b from-white via-[#fffcfa] to-tama-cyan/5 shadow-md shadow-tama-cyan/10",
         className
       )}
     >
       {image && (
-        <div className="relative aspect-square bg-stone-100">
+        <div className="relative aspect-square bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-3">
+          <div className="relative h-full w-full overflow-hidden rounded-2xl">
           <RemoteImage
             src={image}
             alt={imageAlt ?? title ?? "Device image"}
             fill
             sizes="320px"
           />
+          </div>
         </div>
       )}
       <div className="p-5">

@@ -31,7 +31,7 @@ export function ConditionBadge({ condition, className }: ConditionBadgeProps) {
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "inline-flex items-center rounded-md bg-tama-mint/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-700 ring-1 ring-tama-mint/50",
+              "inline-flex items-center rounded-full bg-gradient-to-r from-tama-mint/40 to-tama-cyan/30 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 ring-1 ring-tama-mint/60",
               className
             )}
           >

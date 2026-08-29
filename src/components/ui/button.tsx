@@ -4,18 +4,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tama-cyan/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tama-cyan/50 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-tama-cyan text-white shadow-sm hover:bg-tama-cyan/90",
+          "bg-gradient-to-r from-tama-cyan to-tama-mint text-white shadow-md shadow-tama-cyan/30 hover:brightness-105",
         destructive:
           "bg-red-500 text-white shadow-sm hover:bg-red-500/90",
         outline:
           "border border-stone-200 bg-white shadow-sm hover:bg-stone-50 hover:text-stone-900",
         secondary:
-          "bg-tama-pink/15 text-stone-800 hover:bg-tama-pink/25",
+          "bg-tama-pink/20 text-tama-pink shadow-sm hover:bg-tama-pink/30",
         ghost: "hover:bg-stone-100 hover:text-stone-900",
         link: "text-tama-cyan underline-offset-4 hover:underline",
       },

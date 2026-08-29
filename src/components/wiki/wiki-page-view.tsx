@@ -97,14 +97,14 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPage
       </nav>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 rounded-full bg-white/60 p-1 shadow-sm">
           {isAuthenticated && (
             <>
               <Link href={`/wiki/${page.slug}/edit`}>
-                <Button variant="outline" size="sm">Edit Page</Button>
+                <Button variant="outline" size="sm" className="rounded-full">Edit Page</Button>
               </Link>
               <Link href={`/wiki/${page.slug}/history`}>
-                <Button variant="ghost" size="sm">View History</Button>
+                <Button variant="ghost" size="sm" className="rounded-full">View History</Button>
               </Link>
               <DeleteWikiButton slug={page.slug} title={page.title} />
             </>
@@ -116,7 +116,7 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPage
       </div>
 
       {ownedCount > 0 && (
-        <div className="mb-6 rounded-xl border border-tama-pink/20 bg-tama-pink/5 px-4 py-3">
+        <div className="mb-6 cute-card border-tama-pink/25 bg-gradient-to-r from-tama-pink/10 to-tama-cyan/10 px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-wider text-tama-pink">In My Collection</p>
           <p className="font-medium">
             You own {ownedCount} {page.deviceModel?.name ?? "device"}
@@ -131,7 +131,7 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPage
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <div>
           <header className="mb-8">
-            <h1 className="text-3xl font-bold text-stone-900 sm:text-4xl">
+            <h1 className="font-display text-3xl font-extrabold text-stone-900 sm:text-4xl">
               {page.title}
             </h1>
             {alternateNames && alternateNames.length > 0 && (

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { loginAction } from "@/app/login/actions";
 import { APP_NAME, DEMO_EMAIL } from "@/lib/app-name";
+import { AppLogo } from "@/components/ui/app-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +17,14 @@ export function LoginForm() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
-      <Card className="w-full max-w-md">
+      <Card className="cute-card w-full max-w-md border-tama-cyan/20">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-tama-cyan text-2xl font-bold text-white">
-            t
+          <div className="mx-auto mb-2 animate-float">
+            <AppLogo size="md" />
           </div>
-          <CardTitle>Welcome to {APP_NAME}</CardTitle>
+          <CardTitle className="font-display text-2xl">Welcome to {APP_NAME}</CardTitle>
           <CardDescription>
-            Sign in to manage your Tamagotchi collection
+            Sign in to manage your Tamagotchi collection ✿
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -38,6 +39,7 @@ export function LoginForm() {
                 defaultValue={DEMO_EMAIL}
                 autoComplete="email"
                 required
+                className="rounded-xl border-tama-cyan/20"
               />
             </div>
             <div className="space-y-2">
@@ -49,10 +51,11 @@ export function LoginForm() {
                 defaultValue="demo1234"
                 autoComplete="current-password"
                 required
+                className="rounded-xl border-tama-cyan/20"
               />
             </div>
             {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
-            <Button type="submit" className="w-full" disabled={pending}>
+            <Button type="submit" className="w-full rounded-full" disabled={pending}>
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </form>

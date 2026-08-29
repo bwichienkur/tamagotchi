@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { APP_NAME } from "@/lib/app-name";
+import { AppLogo } from "@/components/ui/app-logo";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -37,14 +38,14 @@ export function Navbar({ user }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-cream/95 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-white/60 bg-cream/80 shadow-sm shadow-tama-cyan/5 backdrop-blur-md">
         <div className="mx-auto max-w-7xl">
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
-            <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tama-cyan text-white shadow-sm">
-                <span className="text-lg font-bold">t</span>
-              </div>
-              <span className="hidden font-bold text-stone-800 sm:inline">{APP_NAME}</span>
+            <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2.5">
+              <AppLogo size="sm" />
+              <span className="font-display hidden text-lg font-extrabold text-stone-800 sm:inline">
+                {APP_NAME}
+              </span>
             </Link>
 
             <nav className="relative z-10 hidden items-center gap-1 lg:flex">
@@ -53,10 +54,10 @@ export function Navbar({ user }: NavbarProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "rounded-full px-3.5 py-2 text-sm font-semibold transition-all",
                     pathname.startsWith(item.href)
-                      ? "bg-tama-cyan/10 text-tama-cyan"
-                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                      ? "bg-gradient-to-r from-tama-cyan/20 to-tama-pink/15 text-tama-cyan shadow-sm"
+                      : "text-stone-600 hover:bg-white/80 hover:text-stone-900"
                   )}
                 >
                   {item.label}
@@ -143,7 +144,7 @@ export function Navbar({ user }: NavbarProps) {
         )}
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white/95 backdrop-blur-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/80 bg-white/90 shadow-[0_-4px_20px_-4px_rgba(78,205,196,0.15)] backdrop-blur-md md:hidden">
         <div className="flex items-center justify-around py-2">
           {NAV_ITEMS.map((item) => (
             <Link
