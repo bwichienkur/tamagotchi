@@ -50,7 +50,11 @@ body {
   animation: slideDown 0.3s ease-out;
 }
 
-/* Bottom nav padding on mobile */
+/* Prevent invisible dialog overlays from blocking clicks */
+[data-radix-dialog-overlay][data-state="closed"] {
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
 @media (max-width: 768px) {
   main {
     padding-bottom: 5rem;

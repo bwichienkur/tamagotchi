@@ -35,16 +35,16 @@ export function Navbar({ user }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-cream/95 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-cream/95 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="flex shrink-0 items-center gap-2">
+          <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tama-cyan text-white shadow-sm">
               <span className="text-lg font-bold">T</span>
             </div>
             <span className="hidden font-bold text-stone-800 sm:inline">TamaDex</span>
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex">
+          <nav className="relative z-10 hidden items-center gap-1 lg:flex">
             {NAV_ITEMS.slice(1).map((item) => (
               <Link
                 key={item.href}
@@ -61,53 +61,50 @@ export function Navbar({ user }: NavbarProps) {
             ))}
           </nav>
 
-          <div className="hidden flex-1 justify-center md:flex">
+          <div className="relative z-10 mx-auto w-full max-w-md flex-1 px-2">
             <GlobalSearch />
           </div>
 
-          <div className="ml-auto flex items-center gap-2">
-            <Link href="/collection/add">
-              <Button size="sm" className="hidden sm:flex">
+          <div className="relative z-10 ml-auto flex items-center gap-2">
+            <Button size="sm" className="hidden sm:inline-flex" asChild>
+              <Link href="/collection/add">
                 <Plus className="h-4 w-4" />
                 Add
-              </Button>
-              <Button size="icon" className="sm:hidden">
+              </Link>
+            </Button>
+            <Button size="icon" className="sm:hidden" asChild>
+              <Link href="/collection/add" aria-label="Add device">
                 <Plus className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/settings">
-              <Button variant="ghost" size="icon" className="hidden sm:flex">
+              </Link>
+            </Button>
+            <Button variant="ghost" size="icon" className="hidden sm:inline-flex" asChild>
+              <Link href="/settings" aria-label="Settings">
                 <Settings className="h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
             {user ? (
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
                 {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
               </div>
             ) : (
-              <Link href="/login">
-                <Button variant="outline" size="sm">
-                  Sign in
-                </Button>
-              </Link>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/login">Sign in</Link>
+              </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
               className="lg:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle menu"
             >
               <Menu className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
-        <div className="border-t border-stone-100 px-4 py-2 md:hidden">
-          <GlobalSearch />
-        </div>
-
         {mobileOpen && (
-          <nav className="border-t border-stone-100 bg-white px-4 py-2 lg:hidden">
+          <nav className="relative z-10 border-t border-stone-100 bg-white px-4 py-2 lg:hidden">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
@@ -128,7 +125,7 @@ export function Navbar({ user }: NavbarProps) {
         )}
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur-md md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white/95 backdrop-blur-md md:hidden">
         <div className="flex items-center justify-around py-2">
           {NAV_ITEMS.map((item) => (
             <Link

@@ -91,8 +91,9 @@ export function GlobalSearch() {
         </kbd>
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden p-0">
+      <Dialog open={open} onOpenChange={setOpen} modal>
+        {open && (
+          <DialogContent className="max-w-2xl overflow-hidden p-0">
           <Command shouldFilter={false} className="rounded-2xl">
             <div className="flex items-center border-b border-stone-200 px-4">
               <Search className="mr-2 h-4 w-4 shrink-0 text-stone-400" />
@@ -150,7 +151,8 @@ export function GlobalSearch() {
               )}
             </Command.List>
           </Command>
-        </DialogContent>
+          </DialogContent>
+        )}
       </Dialog>
     </>
   );
