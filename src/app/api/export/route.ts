@@ -45,14 +45,14 @@ export async function GET(request: NextRequest) {
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": 'attachment; filename="tamadex-collection.csv"',
+        "Content-Disposition": 'attachment; filename="tamagotmi-collection.csv"',
       },
     });
   }
 
   return NextResponse.json(devices, {
     headers: {
-      "Content-Disposition": 'attachment; filename="tamadex-collection.json"',
+      "Content-Disposition": 'attachment; filename="tamagotmi-collection.json"',
     },
   });
 }

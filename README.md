@@ -1,4 +1,4 @@
-# TamaDex
+# tamagotmi
 
 A production-quality full-stack web application for managing a personal Tamagotchi collection and maintaining an editable Tamagotchi wiki/database.
 
@@ -52,7 +52,7 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ### Demo Account
 
-- Email: `demo@tamadex.app`
+- Email: `demo@tamagotmi.app`
 - Password: `demo1234`
 
 ## Scripts

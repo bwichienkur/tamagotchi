@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { z } from "zod";
 
+
 const updateWikiSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
@@ -92,4 +93,38 @@ export async function PUT(
   ]);
 
   return NextResponse.json(updated);
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { slug } = await params;
+
+  const page = await prisma.wikiPage.findUnique({
+    where: { slug },
+    include: { children: { select: { title: true } } },
+  });
+
+  if (!page) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (page.children.length > 0) {
+    return NextResponse.json(
+      {
+        error: `This page has ${page.children.length} subpage(s). Delete or move them first.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  await prisma.wikiPage.delete({ where: { id: page.id } });
+
+  return NextResponse.json({ ok: true });
 }

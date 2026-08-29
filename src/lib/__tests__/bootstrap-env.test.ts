@@ -19,8 +19,8 @@ describe("bootstrapAuthEnv", () => {
     delete process.env.AUTH_URL;
     delete process.env.NEXTAUTH_URL;
     delete process.env.tamagotchi_AUTH_URL;
-    process.env.VERCEL_URL = "tamadex.vercel.app";
+    process.env.VERCEL_URL = "tamagotmi.vercel.app";
     bootstrapAuthEnv();
-    expect(process.env.AUTH_URL).toBe("https://tamadex.vercel.app");
+    expect(process.env.AUTH_URL).toBe("https://tamagotmi.vercel.app");
   });
 });

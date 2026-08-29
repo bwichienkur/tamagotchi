@@ -3,6 +3,7 @@ import { WikiInfobox, InfoboxField } from "@/components/wiki/wiki-infobox";
 import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
+import { DeleteWikiButton } from "@/components/wiki/delete-wiki-button";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
@@ -105,6 +106,7 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPage
               <Link href={`/wiki/${page.slug}/history`}>
                 <Button variant="ghost" size="sm">View History</Button>
               </Link>
+              <DeleteWikiButton slug={page.slug} title={page.title} />
             </>
           )}
         </div>

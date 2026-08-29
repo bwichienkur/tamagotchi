@@ -46,7 +46,7 @@ export async function fetchTamaShellPage(path: string): Promise<string> {
   const url = `${TAMASHELL_ORIGIN}${path}`;
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "TamaDex/1.0 (collection manager; +https://github.com/bwichienkur/tamagotchi)",
+      "User-Agent": "tamagotmi/1.0 (collection manager; +https://github.com/bwichienkur/tamagotchi)",
     },
     next: { revalidate: 0 },
   });

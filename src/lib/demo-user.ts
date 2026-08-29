@@ -1,9 +1,9 @@
 import "@/lib/bootstrap-env";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { DEMO_EMAIL, DEMO_PASSWORD } from "@/lib/app-name";
 
-export const DEMO_EMAIL = "demo@tamadex.app";
-export const DEMO_PASSWORD = "demo1234";
+export { DEMO_EMAIL, DEMO_PASSWORD };
 
 export async function ensureDemoUser() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);

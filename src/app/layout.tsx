@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/providers";
 import { auth } from "@/lib/auth";
 import { hasDatabaseConfig } from "@/lib/db";
+import { APP_NAME } from "@/lib/app-name";
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TamaDex — Tamagotchi Collection & Wiki",
+  title: `${APP_NAME} — Tamagotchi Collection & Wiki`,
   description: "Manage your Tamagotchi collection and explore the wiki database",
 };
 

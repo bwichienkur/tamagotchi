@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { signOut } from "next-auth/react";
+import { APP_NAME } from "@/lib/app-name";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -41,9 +42,9 @@ export function Navbar({ user }: NavbarProps) {
           <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
             <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tama-cyan text-white shadow-sm">
-                <span className="text-lg font-bold">T</span>
+                <span className="text-lg font-bold">t</span>
               </div>
-              <span className="hidden font-bold text-stone-800 sm:inline">TamaDex</span>
+              <span className="hidden font-bold text-stone-800 sm:inline">{APP_NAME}</span>
             </Link>
 
             <nav className="relative z-10 hidden items-center gap-1 lg:flex">
