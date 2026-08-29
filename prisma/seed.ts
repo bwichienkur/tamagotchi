@@ -4,6 +4,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import pg from "pg";
 import { getDatabaseUrl, getMigrationDatabaseUrl } from "../src/lib/db";
+import { DEMO_EMAIL } from "../src/lib/app-name";
 import { TamaShellImporter } from "../src/lib/importers/tamashell";
 
 const pool = new pg.Pool({ connectionString: getMigrationDatabaseUrl() ?? getDatabaseUrl() });
@@ -19,6 +20,8 @@ const FAMILIES = [
 ];
 
 async function removeDemoContent() {
+  await prisma.user.deleteMany({ where: { email: "demo@tamadex.app" } });
+
   await prisma.ownedDevice.deleteMany({
     where: { slug: "blue-waves-connection-v3-demo" },
   });
@@ -37,10 +40,10 @@ async function main() {
   const passwordHash = await bcrypt.hash("demo1234", 10);
 
   await prisma.user.upsert({
-    where: { email: "demo@tamadex.app" },
+    where: { email: DEMO_EMAIL },
     update: { passwordHash, role: "admin", name: "Bright" },
     create: {
-      email: "demo@tamadex.app",
+      email: DEMO_EMAIL,
       name: "Bright",
       passwordHash,
       role: "admin",
@@ -72,7 +75,7 @@ async function main() {
     console.log("Skipping TamaShell import (SKIP_TAMASHELL_IMPORT=true)");
   }
 
-  console.log("Seed completed. Demo user: demo@tamadex.app / demo1234");
+  console.log(`Seed completed. Demo user: ${DEMO_EMAIL} / demo1234`);
 }
 
 main()

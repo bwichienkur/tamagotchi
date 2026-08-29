@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { loginAction } from "@/app/login/actions";
+import { APP_NAME, DEMO_EMAIL } from "@/lib/app-name";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,9 +19,9 @@ export function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-tama-cyan text-2xl font-bold text-white">
-            T
+            t
           </div>
-          <CardTitle>Welcome to TamaDex</CardTitle>
+          <CardTitle>Welcome to {APP_NAME}</CardTitle>
           <CardDescription>
             Sign in to manage your Tamagotchi collection
           </CardDescription>
@@ -34,7 +35,7 @@ export function LoginForm() {
                 id="email"
                 name="email"
                 type="email"
-                defaultValue="demo@tamadex.app"
+                defaultValue={DEMO_EMAIL}
                 autoComplete="email"
                 required
               />
@@ -56,7 +57,7 @@ export function LoginForm() {
             </Button>
           </form>
           <p className="mt-4 text-center text-xs text-stone-400">
-            Demo: demo@tamadex.app / demo1234
+            Demo: {DEMO_EMAIL} / demo1234
           </p>
         </CardContent>
       </Card>

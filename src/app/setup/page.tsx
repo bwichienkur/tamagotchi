@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { APP_NAME } from "@/lib/app-name";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -12,7 +13,7 @@ export default function DatabaseSetupPage() {
           </div>
           <h1 className="text-xl font-bold text-stone-900">Database setup required</h1>
           <p className="mt-3 text-sm text-stone-600">
-            TamaDex could not load data from PostgreSQL. Ensure your Neon storage
+            {APP_NAME} could not load data from PostgreSQL. Ensure your Neon storage
             variables are set in Vercel (e.g.{" "}
             <code className="rounded bg-stone-100 px-1">tamagotchi_POSTGRES_PRISMA_URL</code>
             ), set{" "}
