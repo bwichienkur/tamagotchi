@@ -1,32 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import { randomBytes } from "crypto";
-import { requireAuth } from "@/lib/session";
+import { getApiSession } from "@/lib/session";
+import { saveUploadedImage } from "@/lib/upload-storage";
 
 export async function POST(request: NextRequest) {
-  try {
-    await requireAuth();
-  } catch {
+  const session = await getApiSession();
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
 
-  if (!file) {
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+
+    const url = await saveUploadedImage(file);
+    return NextResponse.json({ url });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
-
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  const ext = path.extname(file.name) || ".jpg";
-  const filename = `${randomBytes(16).toString("hex")}${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, filename), buffer);
-
-  return NextResponse.json({ url: `/uploads/${filename}` });
 }
