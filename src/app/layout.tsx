@@ -4,7 +4,10 @@ import { Toaster } from "sonner";
 import { Navbar } from "@/components/layout/navbar";
 import { Providers } from "@/components/providers";
 import { auth } from "@/lib/auth";
+import { hasDatabaseConfig } from "@/lib/db";
 import "./globals.css";
+
+export const dynamic = "force-dynamic";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +29,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  let session = null;
+  if (hasDatabaseConfig()) {
+    try {
+      session = await auth();
+    } catch (error) {
+      console.error("Auth session error:", error);
+    }
+  }
 
   return (
     <html lang="en">

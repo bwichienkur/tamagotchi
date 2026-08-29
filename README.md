@@ -36,7 +36,9 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Set tamagotchi_DATABASE_URL (Vercel) or DATABASE_URL (local) and AUTH_SECRET
+
+# Vercel: enable Neon storage vars for Production, Preview, AND Development
+# (Build step needs them if pages query the database at build time)
 
 # Run migrations and seed
 npx prisma migrate dev
