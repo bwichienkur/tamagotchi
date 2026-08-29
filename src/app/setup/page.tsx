@@ -13,7 +13,7 @@ export default function DatabaseSetupPage() {
           <h1 className="text-xl font-bold text-stone-900">Database not configured</h1>
           <p className="mt-3 text-sm text-stone-600">
             TamaDex could not connect to PostgreSQL. Set{" "}
-            <code className="rounded bg-stone-100 px-1">DATABASE_URL</code> in your
+            <code className="rounded bg-stone-100 px-1">tamagotchi_DATABASE_URL</code> in your
             environment variables, then run migrations:
           </p>
           <pre className="mt-4 overflow-x-auto rounded-xl bg-stone-900 p-4 text-left text-xs text-stone-100">

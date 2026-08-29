@@ -36,7 +36,7 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit DATABASE_URL and AUTH_SECRET
+# Set tamagotchi_DATABASE_URL (Vercel) or DATABASE_URL (local) and AUTH_SECRET
 
 # Run migrations and seed
 npx prisma migrate dev

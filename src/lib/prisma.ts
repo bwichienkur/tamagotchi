@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
+import { getDatabaseUrl } from "@/lib/db";
 import pg from "pg";
 
 const globalForPrisma = globalThis as unknown as {
@@ -7,10 +8,10 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = getDatabaseUrl();
   if (!connectionString) {
     throw new Error(
-      "DATABASE_URL is not set. Add it to your environment variables before starting the app."
+      "Database URL is not set. Add tamagotchi_DATABASE_URL (or DATABASE_URL) to your environment variables."
     );
   }
 
