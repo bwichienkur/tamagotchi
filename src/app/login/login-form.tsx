@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,6 @@ export function LoginForm() {
   const [password, setPassword] = useState("demo1234");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/collection";
 
@@ -33,14 +32,16 @@ export function LoginForm() {
       if (result?.error || result?.ok === false) {
         if (result?.error === "Configuration") {
           setError("Server auth is not configured. Set tamagotchi_AUTH_SECRET in Vercel environment variables.");
+        } else if (result?.error === "CredentialsSignin") {
+          setError("Invalid email or password.");
         } else {
-          setError("Invalid email or password. If this is a new deploy, run database seed first.");
+          setError(result?.error ?? "Sign-in failed. Please try again.");
         }
         return;
       }
 
-      router.push(callbackUrl);
-      router.refresh();
+      window.location.assign(callbackUrl);
+      return;
     } catch {
       setError("Could not sign in. Check your connection and try again.");
     } finally {

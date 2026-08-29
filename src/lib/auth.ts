@@ -1,12 +1,22 @@
+import "@/lib/bootstrap-env";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthSecret } from "@/lib/auth-secret";
+import { DEMO_EMAIL, ensureDemoUser } from "@/lib/demo-user";
+
+const secret = getAuthSecret();
+
+if (!secret && process.env.NODE_ENV === "production") {
+  console.error(
+    "Auth is misconfigured: set tamagotchi_AUTH_SECRET in Vercel environment variables."
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret: getAuthSecret(),
+  secret,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -21,11 +31,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        if (!getAuthSecret()) {
+          console.error("Sign-in blocked: AUTH_SECRET is not configured");
+          return null;
+        }
+
         try {
           const email = String(credentials.email).trim().toLowerCase();
           const password = String(credentials.password);
 
-          const user = await prisma.user.findUnique({ where: { email } });
+          let user = await prisma.user.findUnique({ where: { email } });
+
+          if (!user && email === DEMO_EMAIL) {
+            user = await ensureDemoUser();
+          }
+
           if (!user?.passwordHash) return null;
 
           const valid = await bcrypt.compare(password, user.passwordHash);

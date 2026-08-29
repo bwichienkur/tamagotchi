@@ -23,7 +23,8 @@ export default function DatabaseSetupPage() {
             {`npx prisma migrate deploy\nnpm run db:seed`}
           </pre>
           <p className="mt-3 text-xs text-stone-500">
-            After deploying, Vercel will run migrations automatically on future builds.
+            In Vercel, enable Neon and auth variables for <strong>Build</strong> and{" "}
+            <strong>Runtime</strong> so migrations, seed, and sign-in all work.
           </p>
           <Link href="/" className="mt-6 inline-block">
             <Button variant="outline">Try again</Button>

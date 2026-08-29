@@ -83,12 +83,16 @@ async function main() {
   }
 
   if (process.env.SKIP_TAMASHELL_IMPORT !== "true") {
-    console.log("Importing devices and shells from TamaShell...");
-    const importer = new TamaShellImporter();
-    const result = await importer.importAll();
-    console.log(
-      `TamaShell import: ${result.devices} devices processed, ${result.shells} shells added, ${result.skipped} skipped`
-    );
+    try {
+      console.log("Importing devices and shells from TamaShell...");
+      const importer = new TamaShellImporter();
+      const result = await importer.importAll();
+      console.log(
+        `TamaShell import: ${result.devices} devices processed, ${result.shells} shells added, ${result.skipped} skipped`
+      );
+    } catch (error) {
+      console.error("TamaShell import failed (continuing seed):", error);
+    }
   } else {
     console.log("Skipping TamaShell import (SKIP_TAMASHELL_IMPORT=true)");
   }
@@ -197,5 +201,8 @@ async function main() {
 }
 
 main()
-  .catch(console.error)
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  })
   .finally(() => prisma.$disconnect());
