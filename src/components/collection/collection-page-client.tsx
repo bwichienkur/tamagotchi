@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Grid3X3, List, Plus } from "lucide-react";
 import { CollectionCard } from "@/components/collection/collection-card";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -128,22 +129,20 @@ export function CollectionPageClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900">My Collection</h1>
-          <p className="mt-1 text-sm text-stone-500">
-            {stats.total} Devices · {stats.deviceTypes} Device Types · {stats.shells} Shells · {stats.nib} NIB
-          </p>
-        </div>
-        <Link href="/collection/add">
-          <Button>
-            <Plus className="h-4 w-4" />
-            Add Device
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="My Collection"
+        subtitle={`${stats.total} devices · ${stats.deviceTypes} types · ${stats.shells} shells · ${stats.nib} NIB`}
+        actions={
+          <Link href="/collection/add">
+            <Button className="rounded-full">
+              <Plus className="h-4 w-4" />
+              Add Device
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="mb-6 space-y-4 rounded-2xl border border-stone-200 bg-white p-4">
+      <div className="cute-card mb-6 space-y-4 p-4">
         <Input
           placeholder="Search collection..."
           value={search}
@@ -232,8 +231,10 @@ export function CollectionPageClient({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-stone-200 py-16 text-center">
-          <p className="text-stone-500">No devices in your collection yet.</p>
+        <div className="cute-card rounded-2xl border-2 border-dashed border-tama-pink/30 bg-tama-pink/5 py-16 text-center">
+          <p className="text-4xl" aria-hidden>🥚</p>
+          <p className="mt-2 font-display font-bold text-stone-700">No devices yet!</p>
+          <p className="text-sm text-stone-500">Time to add your first Tamagotchi</p>
           <Link href="/collection/add" className="mt-4 inline-block">
             <Button>Add your first Tamagotchi</Button>
           </Link>

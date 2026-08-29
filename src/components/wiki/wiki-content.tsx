@@ -63,9 +63,9 @@ export function WikiSectionsContent({ sections, className }: WikiSectionsContent
       {sections.map((section) => (
         <section key={section.id} id={section.id} className="mb-10">
           {section.level === 3 ? (
-            <h3 className="mb-4 text-xl font-semibold text-stone-900">{section.title}</h3>
+            <h3 className="wiki-section-heading mb-4 font-display text-xl font-bold text-stone-900">{section.title}</h3>
           ) : (
-            <h2 className="mb-4 scroll-mt-24 border-b border-stone-200 pb-2 text-2xl font-semibold text-stone-900">
+            <h2 className="wiki-section-heading mb-4 scroll-mt-24 pb-2 font-display text-2xl font-bold text-stone-900">
               {section.title}
             </h2>
           )}

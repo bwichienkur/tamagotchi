@@ -6,6 +6,7 @@ import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RemoteImage } from "@/components/ui/remote-image";
+import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
 
 interface ShellData {
@@ -79,14 +80,12 @@ export function ShellCatalogClient({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-stone-900">Shell Catalog</h1>
-        <p className="mt-1 text-stone-500">
-          Visual database of Tamagotchi shells and colorways
-        </p>
-      </div>
+      <PageHeader
+        title="Shell Catalog"
+        subtitle="Visual database of Tamagotchi shells and colorways"
+      />
 
-      <div className="mb-6 space-y-4 rounded-2xl border border-stone-200 bg-white p-4">
+      <div className="cute-card mb-6 space-y-4 p-4">
         <Input
           placeholder="Search shells..."
           value={search}
@@ -149,18 +148,20 @@ export function ShellCatalogClient({
         {filtered.map((shell) => (
           <div
             key={shell.id}
-            className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
+            className="cute-card group overflow-hidden"
           >
             <Link href={`/devices/${shell.deviceModel.slug}/shells/${shell.slug}`}>
-              <div className="relative aspect-square bg-gradient-to-br from-stone-50 to-stone-100 transition-transform group-hover:scale-[1.02]">
+              <div className="relative aspect-square bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-3 transition-transform group-hover:scale-[1.01]">
+                <div className="relative h-full w-full overflow-hidden rounded-2xl ring-2 ring-white/90">
                 <RemoteImage
                   src={shell.primaryImage ?? "/placeholder-device.svg"}
                   alt={shell.name}
                   fill
                   sizes="(max-width: 768px) 50vw, 25vw"
                 />
+                </div>
                 {shell.ownedCount > 0 && (
-                  <div className="absolute left-3 top-3 rounded-full bg-tama-cyan px-2 py-0.5 text-xs font-bold text-white">
+                  <div className="absolute left-5 top-5 rounded-full bg-gradient-to-r from-tama-cyan to-tama-mint px-2.5 py-0.5 text-xs font-bold text-white shadow-sm">
                     ✓ Owned{shell.ownedCount > 1 ? ` × ${shell.ownedCount}` : ""}
                   </div>
                 )}
@@ -168,7 +169,7 @@ export function ShellCatalogClient({
             </Link>
             <div className="p-4">
               <Link href={`/devices/${shell.deviceModel.slug}/shells/${shell.slug}`}>
-                <h3 className="font-semibold text-stone-900 hover:text-tama-cyan">
+                <h3 className="font-display font-bold text-stone-900 hover:text-tama-cyan">
                   {shell.name}
                 </h3>
               </Link>

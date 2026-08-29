@@ -1,11 +1,21 @@
 import Link from "next/link";
-import { Package, Library, BookOpen, Plus } from "lucide-react";
+import { Package, Library, BookOpen, Plus, Sparkles } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { APP_NAME } from "@/lib/app-name";
 import { CollectionCard } from "@/components/collection/collection-card";
+import { SectionHeading } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ensureDatabase, withDatabase, safeQuery } from "@/lib/db-query";
+import { cn } from "@/lib/utils";
+
+const STAT_COLORS = [
+  "from-tama-cyan/20 to-tama-mint/10 text-tama-cyan",
+  "from-tama-pink/20 to-tama-lavender/10 text-tama-pink",
+  "from-tama-yellow/30 to-tama-yellow/10 text-amber-700",
+  "from-tama-mint/25 to-tama-cyan/10 text-emerald-600",
+];
 
 export default async function HomePage() {
   await ensureDatabase();
@@ -81,98 +91,126 @@ export default async function HomePage() {
     ]);
 
   const stats = [
-    { label: "Devices", value: deviceCount },
-    { label: "Models", value: modelCount },
-    { label: "Shells", value: shellCount },
-    { label: "NIB", value: nibCount },
+    { label: "Devices", value: deviceCount, emoji: "🥚" },
+    { label: "Models", value: modelCount, emoji: "📚" },
+    { label: "Shells", value: shellCount, emoji: "🎨" },
+    { label: "NIB", value: nibCount, emoji: "✨" },
+  ];
+
+  const tiles = [
+    {
+      href: "/collection",
+      icon: Package,
+      title: "My Collection",
+      desc: "Your precious devices",
+      className: "tile-pink",
+      iconClass: "text-tama-pink bg-tama-pink/20",
+    },
+    {
+      href: "/devices",
+      icon: Library,
+      title: "Device Library",
+      desc: "Browse all models",
+      className: "tile-cyan",
+      iconClass: "text-tama-cyan bg-tama-cyan/20",
+    },
+    {
+      href: "/wiki",
+      icon: BookOpen,
+      title: "Wiki",
+      desc: "Learn & explore",
+      className: "tile-yellow",
+      iconClass: "text-amber-700 bg-tama-yellow/40",
+    },
   ];
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <div className="mb-10 text-center">
-        <h1 className="lcd-texture mb-2 text-3xl font-bold text-stone-900 sm:text-4xl">
-          My Tamagotchi Collection
-        </h1>
-        <p className="text-stone-500">
-          Your personal collector database & wiki
-        </p>
-      </div>
+      <section className="cute-card lcd-texture relative mb-10 overflow-hidden px-6 py-10 text-center sm:px-10 sm:py-12">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-tama-pink/20 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-6 -left-6 h-28 w-28 rounded-full bg-tama-cyan/20 blur-2xl" />
+        <div className="relative">
+          <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-tama-pink shadow-sm">
+            <Sparkles className="h-3.5 w-3.5" />
+            Welcome to {APP_NAME}
+          </p>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight text-stone-900 sm:text-5xl">
+            My Tamagotchi Collection
+          </h1>
+          <p className="mx-auto mt-3 max-w-md text-base text-stone-600 sm:text-lg">
+            Your cozy little corner for shells, devices, and wiki adventures ✿
+          </p>
+          {userId && (
+            <Link href="/collection/add" className="mt-6 inline-block">
+              <Button size="lg" className="rounded-full px-8 shadow-md shadow-tama-cyan/25">
+                <Plus className="h-5 w-5" />
+                Add a Tamagotchi
+              </Button>
+            </Link>
+          )}
+        </div>
+      </section>
 
-      <div className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="text-center">
-            <CardContent className="pt-6">
-              <p className="text-3xl font-bold text-tama-cyan">{stat.value}</p>
-              <p className="text-sm text-stone-500">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {userId && (
+        <div className="mb-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {stats.map((stat, i) => (
+            <div
+              key={stat.label}
+              className={cn(
+                "stat-bubble px-4 py-5 text-center",
+                `bg-gradient-to-br ${STAT_COLORS[i]}`
+              )}
+            >
+              <p className="text-2xl" aria-hidden>
+                {stat.emoji}
+              </p>
+              <p className="font-display text-3xl font-extrabold">{stat.value}</p>
+              <p className="text-sm font-medium opacity-80">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {!userId && (
-        <Card className="mb-10 border-tama-cyan/30 bg-tama-cyan/5">
+        <Card className="cute-card mb-10 border-tama-cyan/25 bg-gradient-to-r from-tama-cyan/10 via-white to-tama-pink/10">
           <CardContent className="flex flex-col items-center gap-4 py-8 sm:flex-row sm:justify-between">
-            <div>
-              <h2 className="font-semibold text-stone-900">Get started</h2>
+            <div className="text-center sm:text-left">
+              <h2 className="font-display text-xl font-bold text-stone-900">Ready to collect?</h2>
               <p className="text-sm text-stone-600">
                 Sign in to manage your collection and edit the wiki.
               </p>
             </div>
             <Link href="/login">
-              <Button>Sign in</Button>
+              <Button className="rounded-full px-6">Sign in</Button>
             </Link>
           </CardContent>
         </Card>
       )}
 
       <div className="mb-10 grid gap-4 sm:grid-cols-3">
-        <Link href="/collection" className="group">
-          <Card className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center gap-4 pt-6">
-              <div className="rounded-xl bg-tama-pink/15 p-3">
-                <Package className="h-6 w-6 text-tama-pink" />
-              </div>
-              <div>
-                <h3 className="font-semibold group-hover:text-tama-cyan">My Collection</h3>
-                <p className="text-sm text-stone-500">View your devices</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/devices" className="group">
-          <Card className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center gap-4 pt-6">
-              <div className="rounded-xl bg-tama-cyan/15 p-3">
-                <Library className="h-6 w-6 text-tama-cyan" />
-              </div>
-              <div>
-                <h3 className="font-semibold group-hover:text-tama-cyan">Device Library</h3>
-                <p className="text-sm text-stone-500">Browse all models</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/wiki" className="group">
-          <Card className="transition-shadow hover:shadow-md">
-            <CardContent className="flex items-center gap-4 pt-6">
-              <div className="rounded-xl bg-tama-yellow/30 p-3">
-                <BookOpen className="h-6 w-6 text-stone-700" />
-              </div>
-              <div>
-                <h3 className="font-semibold group-hover:text-tama-cyan">Wiki</h3>
-                <p className="text-sm text-stone-500">Explore articles</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        {tiles.map((tile) => (
+          <Link key={tile.href} href={tile.href} className="group">
+            <Card className={cn("cute-card h-full border-2", tile.className)}>
+              <CardContent className="flex items-center gap-4 pt-6">
+                <div className={cn("rounded-2xl p-3.5 transition-transform group-hover:scale-110", tile.iconClass)}>
+                  <tile.icon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold group-hover:text-tama-cyan">{tile.title}</h3>
+                  <p className="text-sm text-stone-500">{tile.desc}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
       </div>
 
       {recentDevices.length > 0 && (
         <section className="mb-10">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Recently Added</h2>
+            <SectionHeading>Recently Added</SectionHeading>
             <Link href="/collection/add">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="rounded-full">
                 <Plus className="h-4 w-4" />
                 Add Device
               </Button>
@@ -188,7 +226,7 @@ export default async function HomePage() {
 
       {runningDevices.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-xl font-semibold">Currently Running</h2>
+          <SectionHeading className="mb-4">Currently Running</SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {runningDevices.map((device) => (
               <CollectionCard key={device.id} device={device} />
@@ -199,7 +237,7 @@ export default async function HomePage() {
 
       {favorites.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-xl font-semibold">Favorites</h2>
+          <SectionHeading className="mb-4">Favorites</SectionHeading>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {favorites.map((device) => (
               <CollectionCard key={device.id} device={device} />
@@ -209,20 +247,26 @@ export default async function HomePage() {
       )}
 
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Recently Updated Wiki Pages</h2>
+        <SectionHeading className="mb-4">Recently Updated Wiki</SectionHeading>
         <div className="space-y-2">
-          {recentWiki.map((page) => (
-            <Link
-              key={page.id}
-              href={`/wiki/${page.slug}`}
-              className="block rounded-xl border border-stone-200 bg-white px-4 py-3 transition-colors hover:border-tama-cyan/30 hover:bg-tama-cyan/5"
-            >
-              <p className="font-medium text-stone-900">{page.title}</p>
-              {page.summary && (
-                <p className="text-sm text-stone-500 line-clamp-1">{page.summary}</p>
-              )}
-            </Link>
-          ))}
+          {recentWiki.length === 0 ? (
+            <p className="rounded-2xl border-2 border-dashed border-tama-cyan/30 bg-white/60 px-4 py-8 text-center text-stone-500">
+              No wiki pages yet — start one from the Wiki tab!
+            </p>
+          ) : (
+            recentWiki.map((page) => (
+              <Link
+                key={page.id}
+                href={`/wiki/${page.slug}`}
+                className="cute-card block px-4 py-3.5 hover:border-tama-cyan/30"
+              >
+                <p className="font-display font-bold text-stone-900">{page.title}</p>
+                {page.summary && (
+                  <p className="text-sm text-stone-500 line-clamp-1">{page.summary}</p>
+                )}
+              </Link>
+            ))
+          )}
         </div>
       </section>
     </div>

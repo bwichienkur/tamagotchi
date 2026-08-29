@@ -33,10 +33,10 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
 
   if (view === "list") {
     return (
-      <div className="group rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div className="cute-card group p-4">
         <div className="flex gap-4">
           <Link href={`/collection/${device.slug}`} className="shrink-0">
-            <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-stone-100">
+            <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 ring-2 ring-white">
               <RemoteImage
                 src={imageSrc}
                 alt={device.deviceModel.name}
@@ -94,9 +94,10 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
   }
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm transition-all hover:shadow-md">
+    <div className="cute-card group overflow-hidden">
       <Link href={`/collection/${device.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-stone-50 to-stone-100">
+        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-3">
+          <div className="relative h-full w-full overflow-hidden rounded-2xl ring-2 ring-white/90 shadow-inner">
           <RemoteImage
             src={imageSrc}
             alt={device.deviceModel.name}
@@ -104,19 +105,20 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
             className="transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 50vw, 25vw"
           />
+          </div>
           {device.favorite && (
-            <div className="absolute right-3 top-3 rounded-full bg-white/90 p-1.5 shadow-sm">
+            <div className="absolute right-5 top-5 rounded-full bg-white/95 p-2 shadow-md">
               <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
             </div>
           )}
         </div>
       </Link>
-      <div className="p-4">
+      <div className="p-4 pt-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <Link
               href={`/collection/${device.slug}`}
-              className="block truncate font-semibold text-stone-900 hover:text-tama-cyan"
+              className="font-display block truncate font-bold text-stone-900 hover:text-tama-cyan"
             >
               {device.deviceModel.name}
             </Link>
