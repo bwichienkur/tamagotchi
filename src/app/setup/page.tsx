@@ -15,7 +15,9 @@ export default function DatabaseSetupPage() {
             TamaDex could not load data from PostgreSQL. Ensure your Neon storage
             variables are set in Vercel (e.g.{" "}
             <code className="rounded bg-stone-100 px-1">tamagotchi_POSTGRES_PRISMA_URL</code>
-            ), then run migrations and seed the database:
+            ), set{" "}
+            <code className="rounded bg-stone-100 px-1">tamagotchi_AUTH_SECRET</code> for sign-in,
+            then run migrations and seed:
           </p>
           <pre className="mt-4 overflow-x-auto rounded-xl bg-stone-900 p-4 text-left text-xs text-stone-100">
             {`npx prisma migrate deploy\nnpm run db:seed`}

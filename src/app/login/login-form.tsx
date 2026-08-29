@@ -32,7 +32,7 @@ export function LoginForm() {
 
       if (result?.error || result?.ok === false) {
         if (result?.error === "Configuration") {
-          setError("Server auth is not configured. Set AUTH_SECRET in Vercel environment variables.");
+          setError("Server auth is not configured. Set tamagotchi_AUTH_SECRET in Vercel environment variables.");
         } else {
           setError("Invalid email or password. If this is a new deploy, run database seed first.");
         }
