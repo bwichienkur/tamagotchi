@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ConditionBadge {
+  NONE
+  NIB
+  IOB
+}
+
+enum WikiPageType {
+  GENERAL
+  DEVICE
+  OWNED_DEVICE
+  CATEGORY
+}
+
+enum WorkingStatus {
+  WORKING
+  NOT_WORKING
+  UNTESTED
+  FOR_PARTS
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          String    @default("user")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  ownedDevices  OwnedDevice[]
+  wikiPages     WikiPage[]       @relation("WikiCreatedBy")
+  wikiUpdated   WikiPage[]       @relation("WikiUpdatedBy")
+  wikiRevisions WikiRevision[]
+  wishlistItems WishlistItem[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model DeviceFamily {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  slug        String        @unique
+  description String?       @db.Text
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  deviceModels DeviceModel[]
+}
+
+model DeviceModel {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  alternateNames String[]  @default([])
+  familyId       String
+  manufacturer   String?
+  releaseYear    Int?
+  releaseDate    DateTime?
+  regions        String[]  @default([])
+  description    String?   @db.Text
+  heroImage      String?
+  generation     String?
+  predecessorId  String?
+  successorId    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  family        DeviceFamily  @relation(fields: [familyId], references: [id])
+  predecessor   DeviceModel?  @relation("DevicePredecessor", fields: [predecessorId], references: [id])
+  successors    DeviceModel[] @relation("DevicePredecessor")
+  shells        Shell[]
+  ownedDevices  OwnedDevice[]
+  wikiPages     WikiPage[]
+  properties    DeviceProperty[]
+  galleryImages GalleryImage[]
+
+  @@index([familyId])
+  @@index([name])
+  @@index([releaseYear])
+}
+
+model DeviceProperty {
+  id            String      @id @default(cuid())
+  deviceModelId String
+  group         String      @default("Details")
+  label         String
+  value         String      @db.Text
+  sortOrder     Int         @default(0)
+
+  deviceModel DeviceModel @relation(fields: [deviceModelId], references: [id], onDelete: Cascade)
+
+  @@index([deviceModelId])
+}
+
+model Shell {
+  id                String    @id @default(cuid())
+  deviceModelId     String
+  name              String
+  slug              String
+  officialName      String?
+  alternateNames    String[]  @default([])
+  primaryImage      String?
+  additionalImages  String[]  @default([])
+  region            String?
+  releaseDate       DateTime?
+  year              Int?
+  wave              String?
+  colorDescription  String?
+  rarity            String?
+  sourceUrl         String?
+  sourceName        String?
+  externalSourceId  String?
+  importedAt        DateTime?
+  lastCheckedAt     DateTime?
+  notes             String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  deviceModel   DeviceModel    @relation(fields: [deviceModelId], references: [id], onDelete: Cascade)
+  ownedDevices  OwnedDevice[]
+  wishlistItems WishlistItem[]
+
+  @@unique([deviceModelId, slug])
+  @@index([deviceModelId])
+  @@index([name])
+  @@index([sourceUrl])
+}
+
+model OwnedDevice {
+  id               String          @id @default(cuid())
+  userId           String
+  deviceModelId    String
+  shellId          String?
+  customDeviceType String?
+  customShellName  String?
+  slug             String          @unique
+  nickname         String?
+  primaryPhoto     String?
+  additionalPhotos String[]        @default([])
+  conditionBadge   ConditionBadge  @default(NONE)
+  conditionNotes   String?         @db.Text
+  showMoreInfo     String?         @db.Text
+  purchaseDate     DateTime?
+  purchasePrice    Float?
+  purchaseCurrency String?         @default("USD")
+  purchasedFrom    String?
+  serialNumber     String?
+  workingStatus    WorkingStatus   @default(UNTESTED)
+  currentlyRunning Boolean         @default(false)
+  favorite         Boolean         @default(false)
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceModel DeviceModel @relation(fields: [deviceModelId], references: [id])
+  shell       Shell?      @relation(fields: [shellId], references: [id])
+  wikiPages   WikiPage[]
+  galleryImages GalleryImage[]
+
+  @@index([userId])
+  @@index([deviceModelId])
+  @@index([shellId])
+  @@index([favorite])
+  @@index([currentlyRunning])
+}
+
+model WikiPage {
+  id            String       @id @default(cuid())
+  title         String
+  slug          String       @unique
+  parentPageId  String?
+  deviceModelId String?
+  ownedDeviceId String?
+  pageType      WikiPageType @default(GENERAL)
+  summary       String?      @db.Text
+  richContent   String?      @db.Text
+  sections      Json?
+  createdById   String?
+  updatedById   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  parent      WikiPage?      @relation("WikiHierarchy", fields: [parentPageId], references: [id])
+  children    WikiPage[]     @relation("WikiHierarchy")
+  deviceModel DeviceModel?   @relation(fields: [deviceModelId], references: [id])
+  ownedDevice OwnedDevice?   @relation(fields: [ownedDeviceId], references: [id])
+  createdBy   User?          @relation("WikiCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?          @relation("WikiUpdatedBy", fields: [updatedById], references: [id])
+  revisions   WikiRevision[]
+  citations   SourceCitation[] @relation("WikiCitations")
+  tagAssignments TagAssignment[]
+
+  @@index([parentPageId])
+  @@index([deviceModelId])
+  @@index([title])
+}
+
+model WikiRevision {
+  id          String   @id @default(cuid())
+  wikiPageId  String
+  title       String
+  summary     String?  @db.Text
+  richContent String?  @db.Text
+  sections    Json?
+  editedById  String?
+  editSummary String?
+  createdAt   DateTime @default(now())
+
+  wikiPage WikiPage @relation(fields: [wikiPageId], references: [id], onDelete: Cascade)
+  editedBy User?    @relation(fields: [editedById], references: [id])
+
+  @@index([wikiPageId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+
+  assignments TagAssignment[]
+}
+
+model TagAssignment {
+  id         String @id @default(cuid())
+  tagId      String
+  wikiPageId String?
+
+  tag      Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  wikiPage WikiPage? @relation(fields: [wikiPageId], references: [id], onDelete: Cascade)
+
+  @@unique([tagId, wikiPageId])
+}
+
+model SourceCitation {
+  id           String    @id @default(cuid())
+  url          String?
+  title        String
+  website      String?
+  accessedAt   DateTime?
+  notes        String?   @db.Text
+  wikiPageId   String?
+  shellId      String?
+  createdAt    DateTime  @default(now())
+
+  wikiPage WikiPage? @relation("WikiCitations", fields: [wikiPageId], references: [id], onDelete: Cascade)
+}
+
+model GalleryImage {
+  id            String  @id @default(cuid())
+  url           String
+  caption       String?
+  category      String  @default("Other")
+  sortOrder     Int     @default(0)
+  deviceModelId String?
+  ownedDeviceId String?
+
+  deviceModel DeviceModel? @relation(fields: [deviceModelId], references: [id], onDelete: Cascade)
+  ownedDevice OwnedDevice? @relation(fields: [ownedDeviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceModelId])
+  @@index([ownedDeviceId])
+}
+
+model WishlistItem {
+  id            String   @id @default(cuid())
+  userId        String
+  shellId       String
+  priority      Int      @default(0)
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shell Shell @relation(fields: [shellId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shellId])
+  @@index([userId])
+}
+
+model ImportLog {
+  id        String   @id @default(cuid())
+  source    String
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+}

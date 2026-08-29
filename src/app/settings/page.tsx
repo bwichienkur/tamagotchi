@@ -1,0 +1,43 @@
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/session";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+export default async function SettingsPage() {
+  const session = await requireAuth();
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <h1 className="mb-8 text-3xl font-bold">Settings</h1>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-stone-500">Signed in as</p>
+          <p className="font-medium">{session.user.email}</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Portability</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-stone-500">
+            Export your collection data for backup or migration.
+          </p>
+          <div className="flex gap-2">
+            <a href="/api/export?format=json">
+              <Button variant="outline">Export JSON</Button>
+            </a>
+            <a href="/api/export?format=csv">
+              <Button variant="outline">Export CSV</Button>
+            </a>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

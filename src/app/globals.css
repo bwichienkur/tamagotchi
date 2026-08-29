@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f7;
+  --foreground: #1c1917;
+  --tama-cyan: #4ecdc4;
+  --tama-pink: #ff6b9d;
+  --tama-yellow: #ffe66d;
+  --tama-mint: #a8e6cf;
+  --cream: #faf9f7;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-tama-cyan: var(--tama-cyan);
+  --color-tama-pink: var(--tama-pink);
+  --color-tama-yellow: var(--tama-yellow);
+  --color-tama-mint: var(--tama-mint);
+  --color-cream: var(--cream);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+.wiki-content a.wiki-link {
+  color: var(--tama-cyan);
+  text-decoration: underline;
+  text-decoration-style: dashed;
+}
+
+/* Subtle LCD texture for headers */
+.lcd-texture {
+  background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 1px, transparent 0);
+  background-size: 4px 4px;
+}
+
+/* Smooth collapse animation */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+/* Bottom nav padding on mobile */
+@media (max-width: 768px) {
+  main {
+    padding-bottom: 5rem;
+  }
+}
