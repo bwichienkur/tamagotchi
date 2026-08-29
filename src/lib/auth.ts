@@ -6,17 +6,13 @@ import { prisma } from "@/lib/prisma";
 import { getAuthSecret } from "@/lib/auth-secret";
 import { DEMO_EMAIL, ensureDemoUser } from "@/lib/demo-user";
 
-const secret = getAuthSecret();
-
-if (!secret && process.env.NODE_ENV === "production") {
-  console.error(
-    "Auth is misconfigured: set tamagotchi_AUTH_SECRET in Vercel environment variables."
-  );
+function authSecret() {
+  return getAuthSecret();
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
-  secret,
+  secret: authSecret(),
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",
@@ -31,7 +27,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        if (!getAuthSecret()) {
+        if (!authSecret()) {
           console.error("Sign-in blocked: AUTH_SECRET is not configured");
           return null;
         }

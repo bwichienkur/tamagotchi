@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export default async function WikiIndexPage() {
+  const session = await auth();
+
   const pages = await withDatabase(() =>
     prisma.wikiPage.findMany({
     where: { parentPageId: null },
@@ -17,7 +22,17 @@ export default async function WikiIndexPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="mb-8 text-3xl font-bold">Wiki</h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold">Wiki</h1>
+        {session?.user && (
+          <Link href="/wiki/new">
+            <Button>
+              <Plus className="h-4 w-4" />
+              New Page
+            </Button>
+          </Link>
+        )}
+      </div>
 
       <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl border border-stone-200 bg-white p-4">

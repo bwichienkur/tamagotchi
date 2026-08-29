@@ -196,6 +196,7 @@ export function WikiEditClient({
       const res = await fetch(`/api/wiki/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           title,
           summary,
@@ -204,7 +205,14 @@ export function WikiEditClient({
         }),
       });
 
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        if (res.status === 401) {
+          toast.error("Please sign in to save wiki pages.");
+          router.push(`/login?callbackUrl=/wiki/${slug}/edit`);
+          return;
+        }
+        throw new Error("Save failed");
+      }
 
       localStorage.removeItem(draftKey);
       toast.success("Page saved!");

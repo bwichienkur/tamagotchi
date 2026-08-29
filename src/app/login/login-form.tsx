@@ -1,53 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState } from "react";
 import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { loginAction } from "@/app/login/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function LoginForm() {
-  const [email, setEmail] = useState("demo@tamadex.app");
-  const [password, setPassword] = useState("demo1234");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/collection";
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const result = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
-        password,
-        redirect: false,
-        callbackUrl,
-      });
-
-      if (result?.error || result?.ok === false) {
-        if (result?.error === "Configuration") {
-          setError("Server auth is not configured. Set tamagotchi_AUTH_SECRET in Vercel environment variables.");
-        } else if (result?.error === "CredentialsSignin") {
-          setError("Invalid email or password.");
-        } else {
-          setError(result?.error ?? "Sign-in failed. Please try again.");
-        }
-        return;
-      }
-
-      window.location.assign(callbackUrl);
-      return;
-    } catch {
-      setError("Could not sign in. Check your connection and try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [state, formAction, pending] = useActionState(loginAction, null);
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
@@ -62,14 +26,15 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form action={formAction} className="space-y-4">
+            <input type="hidden" name="callbackUrl" value={callbackUrl} />
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                defaultValue="demo@tamadex.app"
                 autoComplete="email"
                 required
               />
@@ -78,16 +43,16 @@ export function LoginForm() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                defaultValue="demo1234"
                 autoComplete="current-password"
                 required
               />
             </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+            {state?.error && <p className="text-sm text-red-500">{state.error}</p>}
+            <Button type="submit" className="w-full" disabled={pending}>
+              {pending ? "Signing in..." : "Sign in"}
             </Button>
           </form>
           <p className="mt-4 text-center text-xs text-stone-400">

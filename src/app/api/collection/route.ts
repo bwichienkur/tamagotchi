@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
+import { getApiSession } from "@/lib/session";
 import { createSlug, createUniqueSlug } from "@/lib/slug";
 import { z } from "zod";
 
@@ -26,7 +26,10 @@ const createOwnedDeviceSchema = z.object({
 });
 
 export async function GET() {
-  const session = await requireAuth();
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const devices = await prisma.ownedDevice.findMany({
     where: { userId: session.user.id },
@@ -41,7 +44,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await requireAuth();
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const body = await request.json();
   const data = createOwnedDeviceSchema.parse(body);
 
