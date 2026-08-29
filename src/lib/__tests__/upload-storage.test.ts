@@ -31,3 +31,25 @@ describe("upload storage env", () => {
     expect(getBlobReadWriteToken()).toBe("fallback-token");
   });
 });
+
+describe("resolveImageMimeType", () => {
+  it("accepts images with empty MIME type when extension is valid", async () => {
+    const { resolveImageMimeType } = await import("../upload-storage");
+    const file = new File([new Uint8Array([1, 2, 3])], "photo.jpg", { type: "" });
+    expect(resolveImageMimeType(file)).toBe("image/jpeg");
+  });
+
+  it("accepts application/octet-stream with png extension", async () => {
+    const { resolveImageMimeType } = await import("../upload-storage");
+    const file = new File([new Uint8Array([1, 2, 3])], "scan.PNG", {
+      type: "application/octet-stream",
+    });
+    expect(resolveImageMimeType(file)).toBe("image/png");
+  });
+
+  it("rejects unknown file types", async () => {
+    const { resolveImageMimeType } = await import("../upload-storage");
+    const file = new File([new Uint8Array([1, 2, 3])], "notes.txt", { type: "text/plain" });
+    expect(resolveImageMimeType(file)).toBeNull();
+  });
+});

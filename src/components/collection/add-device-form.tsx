@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
 import { RemoteImage } from "@/components/ui/remote-image";
+import { uploadImage } from "@/lib/upload-image";
 import { cn } from "@/lib/utils";
 
 interface AddDeviceFormProps {
@@ -75,27 +76,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     }
   };
 
-  const uploadFile = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (res.status === 401) {
-      throw new Error("Please sign in to upload images.");
-    }
-
-    if (!res.ok) {
-      throw new Error(typeof data.error === "string" ? data.error : "Upload failed");
-    }
-
-    return data.url;
-  };
+  const uploadFile = async (file: File): Promise<string> => uploadImage(file);
 
   const handlePhotoUpload = async (files: FileList | null, isPrimary = true) => {
     if (!files?.length) return;
