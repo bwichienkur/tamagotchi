@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { ensureDatabase } from "@/lib/db-query";
+import { withDatabase } from "@/lib/db-query";
 import { WikiInfobox } from "@/components/wiki/wiki-infobox";
 import { Button } from "@/components/ui/button";
 
@@ -11,31 +11,31 @@ export default async function ShellDetailPage({
 }: {
   params: Promise<{ slug: string; shellSlug: string }>;
 }) {
-  await ensureDatabase();
   const { slug, shellSlug } = await params;
   const session = await auth();
   const userId = session?.user?.id;
 
-  const shell = await prisma.shell.findFirst({
-    where: {
-      slug: shellSlug,
-      deviceModel: { slug },
-    },
-    include: {
-      deviceModel: { include: { family: true } },
-      ...(userId ? { ownedDevices: { where: { userId } } } : {}),
-    },
-  });
+  return withDatabase(async () => {
+    const shell = await prisma.shell.findFirst({
+      where: {
+        slug: shellSlug,
+        deviceModel: { slug },
+      },
+      include: {
+        deviceModel: { include: { family: true } },
+        ...(userId ? { ownedDevices: { where: { userId } } } : {}),
+      },
+    });
 
-  if (!shell) notFound();
+    if (!shell) notFound();
 
-  const owned =
-    userId &&
-    "ownedDevices" in shell &&
-    Array.isArray(shell.ownedDevices) &&
-    shell.ownedDevices.length > 0;
+    const owned =
+      userId &&
+      "ownedDevices" in shell &&
+      Array.isArray(shell.ownedDevices) &&
+      shell.ownedDevices.length > 0;
 
-  return (
+    return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <nav className="mb-6 text-sm text-stone-500">
         <Link href="/shells" className="hover:text-tama-cyan">Shell Catalog</Link>
@@ -91,4 +91,5 @@ export default async function ShellDetailPage({
       )}
     </div>
   );
+  });
 }

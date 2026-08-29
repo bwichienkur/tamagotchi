@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ensureDatabase } from "@/lib/db-query";
+import { withDatabase } from "@/lib/db-query";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function WikiIndexPage() {
-  await ensureDatabase();
-  const pages = await prisma.wikiPage.findMany({
+  const pages = await withDatabase(() =>
+    prisma.wikiPage.findMany({
     where: { parentPageId: null },
     include: {
       children: true,
       deviceModel: true,
     },
     orderBy: { title: "asc" },
-  });
+    })
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

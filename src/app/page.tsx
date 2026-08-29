@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { CollectionCard } from "@/components/collection/collection-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ensureDatabase, safeQuery } from "@/lib/db-query";
+import { ensureDatabase, withDatabase, safeQuery } from "@/lib/db-query";
 
 export default async function HomePage() {
   await ensureDatabase();

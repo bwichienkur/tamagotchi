@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { ensureDatabase } from "@/lib/db-query";
+import { withDatabase } from "@/lib/db-query";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function DeviceLibraryPage({
@@ -9,32 +9,35 @@ export default async function DeviceLibraryPage({
 }: {
   searchParams: Promise<{ family?: string }>;
 }) {
-  await ensureDatabase();
   const { family: familySlug } = await searchParams;
   const session = await auth();
 
-  const ownedByModel: Record<string, number> = {};
-  if (session?.user?.id) {
-    const owned = await prisma.ownedDevice.groupBy({
-      by: ["deviceModelId"],
-      where: { userId: session.user.id },
-      _count: true,
-    });
-    for (const o of owned) {
-      ownedByModel[o.deviceModelId] = o._count;
+  const { ownedByModel, families } = await withDatabase(async () => {
+    const ownedByModel: Record<string, number> = {};
+    if (session?.user?.id) {
+      const owned = await prisma.ownedDevice.groupBy({
+        by: ["deviceModelId"],
+        where: { userId: session.user.id },
+        _count: true,
+      });
+      for (const o of owned) {
+        ownedByModel[o.deviceModelId] = o._count;
+      }
     }
-  }
 
-  const families = await prisma.deviceFamily.findMany({
-    orderBy: { sortOrder: "asc" },
-    include: {
-      deviceModels: {
-        include: {
-          _count: { select: { shells: true } },
+    const families = await prisma.deviceFamily.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: {
+        deviceModels: {
+          include: {
+            _count: { select: { shells: true } },
+          },
+          orderBy: { releaseYear: "asc" },
         },
-        orderBy: { releaseYear: "asc" },
       },
-    },
+    });
+
+    return { ownedByModel, families };
   });
 
   const filteredFamilies = familySlug

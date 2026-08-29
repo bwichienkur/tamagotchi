@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { ensureDatabase } from "@/lib/db-query";
+import { withDatabase } from "@/lib/db-query";
 import { WikiPageView } from "@/components/wiki/wiki-page-view";
 
 export default async function WikiSlugPage({
@@ -10,40 +9,41 @@ export default async function WikiSlugPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await ensureDatabase();
   const { slug } = await params;
   const session = await auth();
 
-  const page = await prisma.wikiPage.findUnique({
-    where: { slug },
-    include: {
-      deviceModel: {
-        include: {
-          family: true,
-          properties: { orderBy: { sortOrder: "asc" } },
-          shells: true,
+  return withDatabase(async () => {
+    const page = await prisma.wikiPage.findUnique({
+      where: { slug },
+      include: {
+        deviceModel: {
+          include: {
+            family: true,
+            properties: { orderBy: { sortOrder: "asc" } },
+            shells: true,
+          },
         },
+        parent: true,
+        children: true,
+        citations: true,
       },
-      parent: true,
-      children: true,
-      citations: true,
-    },
-  });
-
-  if (!page) notFound();
-
-  let ownedCount = 0;
-  if (session?.user?.id && page.deviceModelId) {
-    ownedCount = await prisma.ownedDevice.count({
-      where: { userId: session.user.id, deviceModelId: page.deviceModelId },
     });
-  }
 
-  return (
-    <WikiPageView
-      page={page}
-      ownedCount={ownedCount}
-      isAuthenticated={!!session?.user}
-    />
-  );
+    if (!page) notFound();
+
+    let ownedCount = 0;
+    if (session?.user?.id && page.deviceModelId) {
+      ownedCount = await prisma.ownedDevice.count({
+        where: { userId: session.user.id, deviceModelId: page.deviceModelId },
+      });
+    }
+
+    return (
+      <WikiPageView
+        page={page}
+        ownedCount={ownedCount}
+        isAuthenticated={!!session?.user}
+      />
+    );
+  });
 }
