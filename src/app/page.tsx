@@ -5,31 +5,13 @@ import { auth } from "@/lib/auth";
 import { CollectionCard } from "@/components/collection/collection-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { redirect } from "next/navigation";
-import { hasDatabaseConfig } from "@/lib/db";
-
-async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    console.error("Database query failed:", error);
-    return fallback;
-  }
-}
+import { ensureDatabase, safeQuery } from "@/lib/db-query";
 
 export default async function HomePage() {
-  if (!hasDatabaseConfig()) {
-    redirect("/setup");
-  }
+  await ensureDatabase();
 
   const session = await auth();
   const userId = session?.user?.id;
-
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-  } catch {
-    redirect("/setup");
-  }
 
   const [deviceCount, modelCount, shellCount, nibCount, recentDevices, runningDevices, favorites, recentWiki] =
     await Promise.all([

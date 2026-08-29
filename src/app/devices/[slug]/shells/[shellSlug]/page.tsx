@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ensureDatabase } from "@/lib/db-query";
 import { WikiInfobox } from "@/components/wiki/wiki-infobox";
 import { Button } from "@/components/ui/button";
 
@@ -10,8 +11,10 @@ export default async function ShellDetailPage({
 }: {
   params: Promise<{ slug: string; shellSlug: string }>;
 }) {
+  await ensureDatabase();
   const { slug, shellSlug } = await params;
   const session = await auth();
+  const userId = session?.user?.id;
 
   const shell = await prisma.shell.findFirst({
     where: {
@@ -20,15 +23,17 @@ export default async function ShellDetailPage({
     },
     include: {
       deviceModel: { include: { family: true } },
-      ownedDevices: session?.user?.id
-        ? { where: { userId: session.user.id } }
-        : false,
+      ...(userId ? { ownedDevices: { where: { userId } } } : {}),
     },
   });
 
   if (!shell) notFound();
 
-  const owned = Array.isArray(shell.ownedDevices) && shell.ownedDevices.length > 0;
+  const owned =
+    userId &&
+    "ownedDevices" in shell &&
+    Array.isArray(shell.ownedDevices) &&
+    shell.ownedDevices.length > 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">

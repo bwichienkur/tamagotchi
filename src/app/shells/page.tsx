@@ -1,21 +1,26 @@
 import { ShellCatalogClient } from "@/components/shells/shell-catalog-client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ensureDatabase } from "@/lib/db-query";
 
 export default async function ShellCatalogPage() {
+  await ensureDatabase();
   const session = await auth();
+  const userId = session?.user?.id;
 
   const [shells, families, deviceModels, wishlistItems] = await Promise.all([
     prisma.shell.findMany({
       include: {
         deviceModel: { include: { family: true } },
-        _count: {
-          select: {
-            ownedDevices: session?.user?.id
-              ? { where: { userId: session.user.id } }
-              : false,
-          },
-        },
+        ...(userId
+          ? {
+              _count: {
+                select: {
+                  ownedDevices: { where: { userId } },
+                },
+              },
+            }
+          : {}),
       },
       orderBy: [{ deviceModel: { name: "asc" } }, { name: "asc" }],
     }),
@@ -39,7 +44,7 @@ export default async function ShellCatalogPage() {
         year: s.year,
         wave: s.wave,
         deviceModel: s.deviceModel,
-        ownedCount: s._count.ownedDevices,
+        ownedCount: userId && "_count" in s ? s._count.ownedDevices : 0,
         wishlisted: wishlistSet.has(s.id),
       }))}
       families={families}
