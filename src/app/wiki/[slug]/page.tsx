@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ensureDatabase } from "@/lib/db-query";
 import { WikiPageView } from "@/components/wiki/wiki-page-view";
 
 export default async function WikiSlugPage({
@@ -9,6 +10,7 @@ export default async function WikiSlugPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await ensureDatabase();
   const { slug } = await params;
   const session = await auth();
 

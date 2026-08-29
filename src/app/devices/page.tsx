@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { ensureDatabase } from "@/lib/db-query";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function DeviceLibraryPage({
@@ -8,6 +9,7 @@ export default async function DeviceLibraryPage({
 }: {
   searchParams: Promise<{ family?: string }>;
 }) {
+  await ensureDatabase();
   const { family: familySlug } = await searchParams;
   const session = await auth();
 

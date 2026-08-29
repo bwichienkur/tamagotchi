@@ -1,8 +1,10 @@
 import { CollectionPageClient } from "@/components/collection/collection-page-client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
+import { ensureDatabase } from "@/lib/db-query";
 
 export default async function CollectionPage() {
+  await ensureDatabase();
   const session = await requireAuth();
 
   const devices = await prisma.ownedDevice.findMany({

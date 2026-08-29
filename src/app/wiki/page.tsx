@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { ensureDatabase } from "@/lib/db-query";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default async function WikiIndexPage() {
+  await ensureDatabase();
   const pages = await prisma.wikiPage.findMany({
     where: { parentPageId: null },
     include: {
