@@ -1,9 +1,16 @@
-import { normalizeName } from "@/lib/slug";
+import { normalizeName, createSlug } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
+import {
+  FAMILY_SLUG_MAP,
+  TAMASHELL_CATALOG,
+  type TamaShellCatalogEntry,
+} from "./catalog";
+import { fetchTamaShellPage, parseShellsFromHtml } from "./scraper";
 
 export interface TamaShellDevice {
   name: string;
   url: string;
+  slug: string;
   family?: string;
 }
 
@@ -39,44 +46,40 @@ export interface ImportPreview {
   source: string;
 }
 
-const DEMO_CATALOG: Record<string, { family: string; shells: TamaShellShell[] }> = {
-  "Tamagotchi Connection Version 1": {
-    family: "Connection",
-    shells: [
-      { name: "Pink with Ice Cream", region: "North America", year: 2004, sourceUrl: "https://www.tamashell.com/demo/pink-ice-cream", deviceName: "Tamagotchi Connection Version 1" },
-      { name: "Blue with Stars", region: "Japan", year: 2004, sourceUrl: "https://www.tamashell.com/demo/blue-stars", deviceName: "Tamagotchi Connection Version 1" },
-      { name: "Green Camouflage", region: "Europe", year: 2004, sourceUrl: "https://www.tamashell.com/demo/green-camo", deviceName: "Tamagotchi Connection Version 1" },
-    ],
-  },
-  "Tamagotchi Connection v3": {
-    family: "Connection",
-    shells: [
-      { name: "Blue Waves", region: "North America", year: 2006, sourceUrl: "https://www.tamashell.com/demo/blue-waves", deviceName: "Tamagotchi Connection v3" },
-      { name: "Pink Hearts", region: "North America", year: 2006, sourceUrl: "https://www.tamashell.com/demo/pink-hearts", deviceName: "Tamagotchi Connection v3" },
-    ],
-  },
-};
+export interface ImportAllResult {
+  devices: number;
+  shells: number;
+  skipped: number;
+}
 
 export class TamaShellImporter {
-  private rateLimitMs = 1000;
+  private rateLimitMs = 400;
   private lastRequest = 0;
 
   async getDeviceFamilies(): Promise<string[]> {
-    return ["Vintage", "Connection", "Modern", "Classic Remakes"];
+    return Object.keys(FAMILY_SLUG_MAP);
   }
 
   async getDevices(): Promise<TamaShellDevice[]> {
-    await this.respectRateLimit();
-    return Object.keys(DEMO_CATALOG).map((name) => ({
-      name,
-      url: `https://www.tamashell.com/device/${encodeURIComponent(name)}`,
-      family: DEMO_CATALOG[name].family,
+    return TAMASHELL_CATALOG.map((entry) => ({
+      name: entry.name,
+      slug: entry.slug,
+      url: `https://www.tamashell.com/${entry.slug}`,
+      family: entry.family,
     }));
   }
 
-  async getShells(deviceName: string): Promise<TamaShellShell[]> {
+  async getShells(device: TamaShellDevice | string): Promise<TamaShellShell[]> {
+    const entry =
+      typeof device === "string"
+        ? TAMASHELL_CATALOG.find((d) => d.name === device || d.slug === device)
+        : TAMASHELL_CATALOG.find((d) => d.slug === device.slug || d.name === device.name);
+
+    if (!entry) return [];
+
     await this.respectRateLimit();
-    return DEMO_CATALOG[deviceName]?.shells ?? [];
+    const html = await fetchTamaShellPage(`/${entry.slug}`);
+    return parseShellsFromHtml(html, `https://www.tamashell.com/${entry.slug}`, entry.name);
   }
 
   normalizeShell(shell: TamaShellShell): TamaShellShell {
@@ -117,8 +120,114 @@ export class TamaShellImporter {
       (s) =>
         normalizeName(s.name) === normalized ||
         s.alternateNames.some((a) => normalizeName(a) === normalized) ||
-        s.sourceUrl?.includes(shellName.toLowerCase().replace(/\s+/g, "-"))
+        (s.sourceUrl && shellName && s.sourceUrl.includes(createSlug(shellName)))
     );
+  }
+
+  private async resolveDeviceModel(entry: TamaShellCatalogEntry) {
+    const existing = await this.findPossibleDeviceMatch(entry.name);
+    if (existing) {
+      return prisma.deviceModel.findUniqueOrThrow({ where: { id: existing.id } });
+    }
+
+    const familySlug = FAMILY_SLUG_MAP[entry.family];
+    const family = await prisma.deviceFamily.findUnique({ where: { slug: familySlug } });
+    if (!family) {
+      throw new Error(`Device family not found: ${familySlug}`);
+    }
+
+    return prisma.deviceModel.create({
+      data: {
+        name: entry.name,
+        slug: createSlug(entry.name),
+        familyId: family.id,
+        manufacturer: "Bandai",
+      },
+    });
+  }
+
+  async importAll(): Promise<ImportAllResult> {
+    let devices = 0;
+    let shells = 0;
+    let skipped = 0;
+
+    for (const entry of TAMASHELL_CATALOG) {
+      try {
+        const deviceModel = await this.resolveDeviceModel(entry);
+        devices++;
+
+        const existingTamaShellCount = await prisma.shell.count({
+          where: { deviceModelId: deviceModel.id, sourceName: "TamaShell" },
+        });
+
+        if (
+          existingTamaShellCount > 0 &&
+          process.env.FORCE_TAMASHELL_RESCRAPE !== "true"
+        ) {
+          skipped += existingTamaShellCount;
+          continue;
+        }
+
+        const scrapedShells = await this.getShells({
+          name: entry.name,
+          slug: entry.slug,
+          url: `https://www.tamashell.com/${entry.slug}`,
+          family: entry.family,
+        });
+
+        let heroImage: string | null = deviceModel.heroImage;
+        for (const shell of scrapedShells) {
+          const normalized = this.normalizeShell(shell);
+          const existing = await this.findPossibleShellMatch(normalized.name, deviceModel.id);
+          if (existing) {
+            if (!existing.primaryImage && normalized.imageUrl) {
+              await prisma.shell.update({
+                where: { id: existing.id },
+                data: { primaryImage: normalized.imageUrl, lastCheckedAt: new Date() },
+              });
+            }
+            skipped++;
+            continue;
+          }
+
+          await prisma.shell.create({
+            data: {
+              deviceModelId: deviceModel.id,
+              name: normalized.name,
+              slug: createSlug(normalized.name),
+              primaryImage: normalized.imageUrl,
+              sourceUrl: normalized.sourceUrl,
+              sourceName: "TamaShell",
+              importedAt: new Date(),
+              lastCheckedAt: new Date(),
+            },
+          });
+          shells++;
+          if (!heroImage && normalized.imageUrl) {
+            heroImage = normalized.imageUrl;
+          }
+        }
+
+        if (heroImage && heroImage !== deviceModel.heroImage) {
+          await prisma.deviceModel.update({
+            where: { id: deviceModel.id },
+            data: { heroImage },
+          });
+        }
+      } catch (error) {
+        console.error(`TamaShell import failed for ${entry.name}:`, error);
+      }
+    }
+
+    await prisma.importLog.create({
+      data: {
+        source: "TamaShell",
+        action: "import_all",
+        details: { devices, shells, skipped },
+      },
+    });
+
+    return { devices, shells, skipped };
   }
 
   async scan(): Promise<ImportPreview> {
@@ -126,7 +235,7 @@ export class TamaShellImporter {
     const items: ImportPreviewItem[] = [];
 
     for (const device of devices) {
-      const shells = await this.getShells(device.name);
+      const shells = await this.getShells(device);
       const deviceMatch = await this.findPossibleDeviceMatch(device.name);
 
       let deviceModelId = deviceMatch?.id;
@@ -209,14 +318,16 @@ export class TamaShellImporter {
       let deviceModelId = selection.useExistingDeviceId;
 
       if (!deviceModelId) {
-        const family = await prisma.deviceFamily.findFirst({
-          where: { name: { equals: selection.family ?? "Modern", mode: "insensitive" } },
-        });
-        const familyId =
-          family?.id ??
-          (await prisma.deviceFamily.findFirst())!.id;
+        const catalogEntry = TAMASHELL_CATALOG.find((d) => d.name === selection.deviceName);
+        const familySlug = catalogEntry
+          ? FAMILY_SLUG_MAP[catalogEntry.family]
+          : createSlug(selection.family ?? "modern");
 
-        const { createSlug } = await import("@/lib/slug");
+        const family = await prisma.deviceFamily.findFirst({
+          where: { slug: familySlug },
+        });
+        const familyId = family?.id ?? (await prisma.deviceFamily.findFirst())!.id;
+
         const model = await prisma.deviceModel.create({
           data: {
             name: selection.deviceName,
@@ -234,7 +345,6 @@ export class TamaShellImporter {
           continue;
         }
 
-        const { createSlug } = await import("@/lib/slug");
         await prisma.shell.create({
           data: {
             deviceModelId,

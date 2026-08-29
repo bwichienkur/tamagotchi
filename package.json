@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && npm run db:seed && next build",
+    "db:import-tamashell": "npx tsx -e \"import('./src/lib/importers/tamashell').then(m => new m.TamaShellImporter().importAll().then(console.log))\"",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

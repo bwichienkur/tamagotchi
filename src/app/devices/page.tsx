@@ -31,6 +31,11 @@ export default async function DeviceLibraryPage({
         deviceModels: {
           include: {
             _count: { select: { shells: true } },
+            shells: {
+              take: 1,
+              orderBy: { name: "asc" },
+              select: { primaryImage: true },
+            },
           },
           orderBy: { releaseYear: "asc" },
         },
@@ -86,10 +91,23 @@ export default async function DeviceLibraryPage({
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {family.deviceModels.map((model) => {
               const ownedCount = ownedByModel[model.id] ?? 0;
+              const imageUrl = model.heroImage ?? model.shells[0]?.primaryImage ?? null;
               return (
                 <Link key={model.id} href={`/devices/${model.slug}`}>
                   <Card className="h-full transition-shadow hover:shadow-md">
-                    <div className="aspect-video bg-gradient-to-br from-stone-50 to-stone-100" />
+                    {imageUrl ? (
+                      <div className="aspect-video overflow-hidden bg-stone-50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imageUrl}
+                          alt={model.name}
+                          className="h-full w-full object-contain p-3"
+                          loading="lazy"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-gradient-to-br from-stone-50 to-stone-100" />
+                    )}
                     <CardContent className="pt-4">
                       <h3 className="font-semibold text-stone-900">{model.name}</h3>
                       <p className="text-sm text-stone-500">
