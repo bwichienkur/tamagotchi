@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { RemoteImage } from "@/components/ui/remote-image";
 
 export interface InfoboxField {
   group?: string;
@@ -40,11 +40,10 @@ export function WikiInfobox({
     >
       {image && (
         <div className="relative aspect-square bg-stone-100">
-          <Image
+          <RemoteImage
             src={image}
             alt={imageAlt ?? title ?? "Device image"}
             fill
-            className="object-cover"
             sizes="320px"
           />
         </div>

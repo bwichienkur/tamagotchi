@@ -2,10 +2,10 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { cn } from "@/lib/utils";
 
 interface ShellData {
@@ -152,12 +152,11 @@ export function ShellCatalogClient({
             className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm transition-shadow hover:shadow-md"
           >
             <Link href={`/devices/${shell.deviceModel.slug}/shells/${shell.slug}`}>
-              <div className="relative aspect-square bg-gradient-to-br from-stone-50 to-stone-100">
-                <Image
+              <div className="relative aspect-square bg-gradient-to-br from-stone-50 to-stone-100 transition-transform group-hover:scale-[1.02]">
+                <RemoteImage
                   src={shell.primaryImage ?? "/placeholder-device.svg"}
                   alt={shell.name}
                   fill
-                  className="object-cover transition-transform group-hover:scale-105"
                   sizes="(max-width: 768px) 50vw, 25vw"
                 />
                 {shell.ownedCount > 0 && (
