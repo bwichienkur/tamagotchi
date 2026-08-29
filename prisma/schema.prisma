@@ -45,6 +45,20 @@ model User {
   wikiUpdated   WikiPage[]       @relation("WikiUpdatedBy")
   wikiRevisions WikiRevision[]
   wishlistItems WishlistItem[]
+  uploads       UserUpload[]
+}
+
+model UserUpload {
+  id        String   @id @default(cuid())
+  userId    String
+  filename  String
+  mimeType  String
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Account {
