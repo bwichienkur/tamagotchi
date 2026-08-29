@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
@@ -9,7 +8,9 @@ import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
 import { ConditionBadge } from "@/components/collection/condition-badge";
+import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
 import { Button } from "@/components/ui/button";
+import { RemoteImage } from "@/components/ui/remote-image";
 
 export default async function OwnedDevicePage({
   params,
@@ -116,16 +117,19 @@ export default async function OwnedDevicePage({
         ))}
       </nav>
 
-      <div className="mb-6 rounded-xl border border-tama-cyan/20 bg-tama-cyan/5 px-4 py-3">
-        <p className="text-xs font-bold uppercase tracking-wider text-tama-cyan">My Device</p>
-        <p className="font-semibold text-stone-900">
-          {device.nickname ?? `${shellName} ${device.deviceModel.name}`}
-        </p>
-        <Link href={`/devices/${device.deviceModel.slug}`}>
-          <Button variant="link" className="h-auto p-0 text-sm">
-            View {device.deviceModel.name} Wiki →
-          </Button>
-        </Link>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tama-cyan/20 bg-tama-cyan/5 px-4 py-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-tama-cyan">My Device</p>
+          <p className="font-semibold text-stone-900">
+            {device.nickname ?? `${shellName} ${device.deviceModel.name}`}
+          </p>
+          <Link href={`/devices/${device.deviceModel.slug}`}>
+            <Button variant="link" className="h-auto p-0 text-sm">
+              View {device.deviceModel.name} Wiki →
+            </Button>
+          </Link>
+        </div>
+        <RemoveDeviceButton slug={device.slug} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
@@ -166,12 +170,12 @@ export default async function OwnedDevicePage({
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {device.primaryPhoto && (
                   <div className="relative aspect-square overflow-hidden rounded-xl">
-                    <Image src={device.primaryPhoto} alt="Primary" fill className="object-cover" />
+                    <RemoteImage src={device.primaryPhoto} alt="Primary" fill />
                   </div>
                 )}
                 {device.additionalPhotos.map((url, i) => (
                   <div key={i} className="relative aspect-square overflow-hidden rounded-xl">
-                    <Image src={url} alt={`Photo ${i + 1}`} fill className="object-cover" />
+                    <RemoteImage src={url} alt={`Photo ${i + 1}`} fill />
                   </div>
                 ))}
               </div>
@@ -182,11 +186,10 @@ export default async function OwnedDevicePage({
             <div className="mt-10">
               <h3 className="mb-3 text-lg font-semibold text-stone-700">Reference Shell</h3>
               <div className="relative mx-auto h-48 w-48 overflow-hidden rounded-xl border border-stone-200">
-                <Image
+                <RemoteImage
                   src={device.shell.primaryImage}
                   alt={`Reference: ${shellName}`}
                   fill
-                  className="object-cover"
                 />
               </div>
               {device.shell.sourceName && (

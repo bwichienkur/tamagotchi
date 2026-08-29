@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { ConditionBadge } from "@/components/collection/condition-badge";
+import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { cn } from "@/lib/utils";
 
 export interface CollectionCardData {
@@ -36,11 +37,10 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
         <div className="flex gap-4">
           <Link href={`/collection/${device.slug}`} className="shrink-0">
             <div className="relative h-24 w-24 overflow-hidden rounded-xl bg-stone-100">
-              <Image
+              <RemoteImage
                 src={imageSrc}
                 alt={device.deviceModel.name}
                 fill
-                className="object-cover"
                 sizes="96px"
               />
             </div>
@@ -84,6 +84,9 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
                 </div>
               </div>
             )}
+            <div className="mt-3">
+              <RemoveDeviceButton slug={device.slug} size="sm" />
+            </div>
           </div>
         </div>
       </div>
@@ -94,11 +97,11 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
     <div className="group overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm transition-all hover:shadow-md">
       <Link href={`/collection/${device.slug}`} className="block">
         <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-stone-50 to-stone-100">
-          <Image
+          <RemoteImage
             src={imageSrc}
             alt={device.deviceModel.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="transition-transform duration-300 group-hover:scale-105"
             sizes="(max-width: 768px) 50vw, 25vw"
           />
           {device.favorite && (
@@ -150,6 +153,9 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
             </div>
           </div>
         )}
+        <div className="mt-3 flex justify-end border-t border-stone-100 pt-3">
+          <RemoveDeviceButton slug={device.slug} size="sm" />
+        </div>
       </div>
     </div>
   );

@@ -152,7 +152,7 @@ export default async function HomePage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/wiki/tamagotchi-connection-v1" className="group">
+        <Link href="/wiki" className="group">
           <Card className="transition-shadow hover:shadow-md">
             <CardContent className="flex items-center gap-4 pt-6">
               <div className="rounded-xl bg-tama-yellow/30 p-3">
