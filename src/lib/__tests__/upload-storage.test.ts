@@ -1,6 +1,6 @@
 import { describe, expect, it, afterEach, vi } from "vitest";
 
-describe("upload storage env", () => {
+describe("blob env", () => {
   const originalPrefixed = process.env.tamagotchi_BLOB_READ_WRITE_TOKEN;
   const originalUnprefixed = process.env.BLOB_READ_WRITE_TOKEN;
 
@@ -14,21 +14,46 @@ describe("upload storage env", () => {
     vi.resetModules();
   });
 
-  it("reads prefixed blob token", async () => {
-    process.env.tamagotchi_BLOB_READ_WRITE_TOKEN = "test-token";
+  it("prefers unprefixed BLOB_READ_WRITE_TOKEN (Vercel standard)", async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = "vercel-token";
+    process.env.tamagotchi_BLOB_READ_WRITE_TOKEN = "prefixed-token";
+
+    const { getBlobReadWriteToken, hasBlobStorage } = await import("../blob-env");
+    expect(getBlobReadWriteToken()).toBe("vercel-token");
+    expect(hasBlobStorage()).toBe(true);
+  });
+
+  it("falls back to prefixed token when unprefixed is missing", async () => {
     delete process.env.BLOB_READ_WRITE_TOKEN;
+    process.env.tamagotchi_BLOB_READ_WRITE_TOKEN = "prefixed-token";
+
+    const { getBlobReadWriteToken } = await import("../blob-env");
+    expect(getBlobReadWriteToken()).toBe("prefixed-token");
+    expect(process.env.BLOB_READ_WRITE_TOKEN).toBe("prefixed-token");
+  });
+
+  it("ignores empty prefixed values", async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = "vercel-token";
+    process.env.tamagotchi_BLOB_READ_WRITE_TOKEN = "   ";
+
+    const { getBlobReadWriteToken } = await import("../blob-env");
+    expect(getBlobReadWriteToken()).toBe("vercel-token");
+  });
+});
+
+describe("upload storage env", () => {
+  afterEach(() => {
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.tamagotchi_BLOB_READ_WRITE_TOKEN;
+    vi.resetModules();
+  });
+
+  it("re-exports blob helpers from blob-env", async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = "test-token";
 
     const { getBlobReadWriteToken, hasBlobStorage } = await import("../upload-storage");
     expect(getBlobReadWriteToken()).toBe("test-token");
     expect(hasBlobStorage()).toBe(true);
-  });
-
-  it("falls back to unprefixed blob token", async () => {
-    delete process.env.tamagotchi_BLOB_READ_WRITE_TOKEN;
-    process.env.BLOB_READ_WRITE_TOKEN = "fallback-token";
-
-    const { getBlobReadWriteToken } = await import("../upload-storage");
-    expect(getBlobReadWriteToken()).toBe("fallback-token");
   });
 });
 

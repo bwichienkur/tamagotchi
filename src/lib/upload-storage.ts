@@ -5,8 +5,10 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
+import { getBlobReadWriteToken, hasBlobStorage } from "@/lib/blob-env";
 
-const STORAGE_PREFIX = "tamagotchi_";
+export { getBlobReadWriteToken, hasBlobStorage };
+
 const MAX_BYTES = 10 * 1024 * 1024;
 const DB_FALLBACK_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -19,18 +21,6 @@ const EXTENSION_MIME: Record<string, string> = {
 };
 
 const ALLOWED_MIME_TYPES = new Set(Object.values(EXTENSION_MIME));
-
-function env(name: string): string | undefined {
-  return process.env[`${STORAGE_PREFIX}${name}`] ?? process.env[name];
-}
-
-export function getBlobReadWriteToken(): string | undefined {
-  return env("BLOB_READ_WRITE_TOKEN");
-}
-
-export function hasBlobStorage(): boolean {
-  return Boolean(getBlobReadWriteToken());
-}
 
 export function resolveImageMimeType(file: File): string | null {
   const normalizedType = file.type === "image/jpg" ? "image/jpeg" : file.type;
@@ -79,7 +69,6 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
   if (token) {
     const blob = await put(`uploads/${filename}`, buffer, {
       access: "public",
-      token,
       contentType: mimeType,
     });
     return blob.url;
@@ -122,7 +111,6 @@ export async function handleBlobClientUpload(
   }
 
   return handleUpload({
-    token,
     request,
     body,
     onBeforeGenerateToken: async () => ({

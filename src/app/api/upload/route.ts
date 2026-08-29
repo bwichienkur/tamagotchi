@@ -1,3 +1,4 @@
+import "@/lib/bootstrap-env";
 import { NextRequest, NextResponse } from "next/server";
 import { getApiSession } from "@/lib/session";
 import {
