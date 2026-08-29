@@ -5,53 +5,96 @@ import { auth } from "@/lib/auth";
 import { CollectionCard } from "@/components/collection/collection-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { redirect } from "next/navigation";
+
+async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error("Database query failed:", error);
+    return fallback;
+  }
+}
 
 export default async function HomePage() {
+  if (!process.env.DATABASE_URL) {
+    redirect("/setup");
+  }
+
   const session = await auth();
   const userId = session?.user?.id;
 
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    redirect("/setup");
+  }
+
   const [deviceCount, modelCount, shellCount, nibCount, recentDevices, runningDevices, favorites, recentWiki] =
     await Promise.all([
-      userId ? prisma.ownedDevice.count({ where: { userId } }) : 0,
+      userId ? safeQuery(() => prisma.ownedDevice.count({ where: { userId } }), 0) : 0,
       userId
-        ? prisma.ownedDevice
-            .groupBy({ by: ["deviceModelId"], where: { userId } })
-            .then((g) => g.length)
+        ? safeQuery(
+            () =>
+              prisma.ownedDevice
+                .groupBy({ by: ["deviceModelId"], where: { userId } })
+                .then((g) => g.length),
+            0
+          )
         : 0,
       userId
-        ? prisma.ownedDevice
-            .groupBy({ by: ["shellId"], where: { userId, shellId: { not: null } } })
-            .then((g) => g.length)
+        ? safeQuery(
+            () =>
+              prisma.ownedDevice
+                .groupBy({ by: ["shellId"], where: { userId, shellId: { not: null } } })
+                .then((g) => g.length),
+            0
+          )
         : 0,
       userId
-        ? prisma.ownedDevice.count({ where: { userId, conditionBadge: "NIB" } })
+        ? safeQuery(
+            () => prisma.ownedDevice.count({ where: { userId, conditionBadge: "NIB" } }),
+            0
+          )
         : 0,
       userId
-        ? prisma.ownedDevice.findMany({
-            where: { userId },
-            include: { deviceModel: true, shell: true },
-            orderBy: { createdAt: "desc" },
-            take: 4,
-          })
+        ? safeQuery(
+            () =>
+              prisma.ownedDevice.findMany({
+                where: { userId },
+                include: { deviceModel: true, shell: true },
+                orderBy: { createdAt: "desc" },
+                take: 4,
+              }),
+            []
+          )
         : [],
       userId
-        ? prisma.ownedDevice.findMany({
-            where: { userId, currentlyRunning: true },
-            include: { deviceModel: true, shell: true },
-            take: 4,
-          })
+        ? safeQuery(
+            () =>
+              prisma.ownedDevice.findMany({
+                where: { userId, currentlyRunning: true },
+                include: { deviceModel: true, shell: true },
+                take: 4,
+              }),
+            []
+          )
         : [],
       userId
-        ? prisma.ownedDevice.findMany({
-            where: { userId, favorite: true },
-            include: { deviceModel: true, shell: true },
-            take: 4,
-          })
+        ? safeQuery(
+            () =>
+              prisma.ownedDevice.findMany({
+                where: { userId, favorite: true },
+                include: { deviceModel: true, shell: true },
+                take: 4,
+              }),
+            []
+          )
         : [],
-      prisma.wikiPage.findMany({
-        orderBy: { updatedAt: "desc" },
-        take: 5,
-      }),
+      safeQuery(
+        () => prisma.wikiPage.findMany({ orderBy: { updatedAt: "desc" }, take: 5 }),
+        []
+      ),
     ]);
 
   const stats = [
