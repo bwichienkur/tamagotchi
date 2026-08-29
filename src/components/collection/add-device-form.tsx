@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { cn } from "@/lib/utils";
 
 interface AddDeviceFormProps {
@@ -78,9 +78,22 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
-    if (!res.ok) throw new Error("Upload failed");
-    const data = await res.json();
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.status === 401) {
+      throw new Error("Please sign in to upload images.");
+    }
+
+    if (!res.ok) {
+      throw new Error(typeof data.error === "string" ? data.error : "Upload failed");
+    }
+
     return data.url;
   };
 
@@ -96,8 +109,8 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
           setAdditionalPhotos((prev) => [...prev, url]);
         }
       }
-    } catch {
-      toast.error("Failed to upload image");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload image");
     } finally {
       setUploading(false);
     }
@@ -165,7 +178,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
           >
             {primaryPhoto ? (
               <div className="relative h-48 w-48">
-                <Image src={primaryPhoto} alt="Device" fill className="rounded-xl object-cover" />
+                <RemoteImage src={primaryPhoto} alt="Device" fill />
                 <button
                   type="button"
                   onClick={() => setPrimaryPhoto(undefined)}
@@ -194,7 +207,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
             <div className="mt-4 flex gap-2">
               {additionalPhotos.map((url, i) => (
                 <div key={i} className="relative h-16 w-16">
-                  <Image src={url} alt="" fill className="rounded-lg object-cover" />
+                  <RemoteImage src={url} alt={`Additional photo ${i + 1}`} fill />
                 </div>
               ))}
             </div>
