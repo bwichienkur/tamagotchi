@@ -16,6 +16,7 @@ import { GlobalSearch } from "@/components/search/global-search";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
@@ -84,8 +85,18 @@ export function Navbar({ user }: NavbarProps) {
                 </Link>
               </Button>
               {user ? (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
-                  {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
+                <div className="flex items-center gap-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
+                    {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hidden text-xs sm:inline-flex"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                  >
+                    Sign out
+                  </Button>
                 </div>
               ) : (
                 <Button variant="outline" size="sm" className="px-2 text-xs sm:px-3 sm:text-sm" asChild>

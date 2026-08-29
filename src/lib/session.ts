@@ -20,3 +20,12 @@ export async function requireAdmin() {
   }
   return session;
 }
+
+/** For API route handlers — returns null instead of redirecting. */
+export async function getApiSession() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return null;
+  }
+  return session;
+}

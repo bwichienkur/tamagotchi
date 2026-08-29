@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/session";
-import { createSlug } from "@/lib/slug";
+import { getApiSession } from "@/lib/session";
 import { z } from "zod";
 
 const updateWikiSchema = z.object({
@@ -56,7 +55,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const session = await requireAuth();
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { slug } = await params;
   const body = await request.json();
   const data = updateWikiSchema.parse(body);
@@ -89,40 +92,4 @@ export async function PUT(
   ]);
 
   return NextResponse.json(updated);
-}
-
-export async function POST(request: NextRequest) {
-  const session = await requireAuth();
-  const body = await request.json();
-  const { title, parentPageId, deviceModelId } = body;
-
-  const slug = createSlug(title);
-  const existing = await prisma.wikiPage.findUnique({ where: { slug } });
-  if (existing) {
-    return NextResponse.json({ error: "Page already exists" }, { status: 409 });
-  }
-
-  const page = await prisma.wikiPage.create({
-    data: {
-      title,
-      slug,
-      parentPageId,
-      deviceModelId,
-      createdById: session.user.id,
-      updatedById: session.user.id,
-      sections: [],
-    },
-  });
-
-  await prisma.wikiRevision.create({
-    data: {
-      wikiPageId: page.id,
-      title: page.title,
-      sections: [],
-      editedById: session.user.id,
-      editSummary: "Initial page",
-    },
-  });
-
-  return NextResponse.json(page, { status: 201 });
 }
