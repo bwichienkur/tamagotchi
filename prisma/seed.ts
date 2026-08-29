@@ -4,9 +4,9 @@ import { PrismaClient, ConditionBadge, WikiPageType } from "../src/generated/pri
 import bcrypt from "bcryptjs";
 import pg from "pg";
 import { createSlug } from "../src/lib/slug";
-import { getDatabaseUrl } from "../src/lib/db";
+import { getDatabaseUrl, getMigrationDatabaseUrl } from "../src/lib/db";
 
-const pool = new pg.Pool({ connectionString: getDatabaseUrl() });
+const pool = new pg.Pool({ connectionString: getMigrationDatabaseUrl() ?? getDatabaseUrl() });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 

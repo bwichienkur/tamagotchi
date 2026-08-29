@@ -1,5 +1,30 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createSlug, normalizeName } from "@/lib/slug";
+
+describe("database env resolution", () => {
+  const original = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...original };
+  });
+
+  it("reads tamagotchi_ prefixed Neon variables", async () => {
+    process.env = { ...original };
+    delete process.env.DATABASE_URL;
+    delete process.env.POSTGRES_PRISMA_URL;
+    process.env.tamagotchi_POSTGRES_PRISMA_URL = "postgresql://neon-prisma";
+    const { getDatabaseUrl } = await import("@/lib/db");
+    expect(getDatabaseUrl()).toBe("postgresql://neon-prisma");
+  });
+
+  it("prefers prisma pooled URL over database url", async () => {
+    process.env = { ...original };
+    process.env.tamagotchi_POSTGRES_PRISMA_URL = "postgresql://pooled";
+    process.env.tamagotchi_DATABASE_URL = "postgresql://direct";
+    const { getDatabaseUrl } = await import("@/lib/db");
+    expect(getDatabaseUrl()).toBe("postgresql://pooled");
+  });
+});
 
 describe("slug utilities", () => {
   it("creates clean slugs", () => {

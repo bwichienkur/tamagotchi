@@ -6,7 +6,7 @@ import { CollectionCard } from "@/components/collection/collection-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { redirect } from "next/navigation";
-import { getDatabaseUrl } from "@/lib/db";
+import { hasDatabaseConfig } from "@/lib/db";
 
 async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
   try {
@@ -18,7 +18,7 @@ async function safeQuery<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
 }
 
 export default async function HomePage() {
-  if (!getDatabaseUrl()) {
+  if (!hasDatabaseConfig()) {
     redirect("/setup");
   }
 

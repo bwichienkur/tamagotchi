@@ -12,9 +12,12 @@ export default function DatabaseSetupPage() {
           </div>
           <h1 className="text-xl font-bold text-stone-900">Database not configured</h1>
           <p className="mt-3 text-sm text-stone-600">
-            TamaDex could not connect to PostgreSQL. Set{" "}
-            <code className="rounded bg-stone-100 px-1">tamagotchi_DATABASE_URL</code> in your
-            environment variables, then run migrations:
+            TamaDex could not connect to PostgreSQL. Ensure your Neon storage
+            variables are set in Vercel (e.g.{" "}
+            <code className="rounded bg-stone-100 px-1">tamagotchi_POSTGRES_PRISMA_URL</code>
+            {" "}or{" "}
+            <code className="rounded bg-stone-100 px-1">tamagotchi_DATABASE_URL</code>
+            ), then run migrations:
           </p>
           <pre className="mt-4 overflow-x-auto rounded-xl bg-stone-900 p-4 text-left text-xs text-stone-100">
             {`npx prisma migrate deploy\nnpm run db:seed`}

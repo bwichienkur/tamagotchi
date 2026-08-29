@@ -11,7 +11,7 @@ function createPrismaClient() {
   const connectionString = getDatabaseUrl();
   if (!connectionString) {
     throw new Error(
-      "Database URL is not set. Add tamagotchi_DATABASE_URL (or DATABASE_URL) to your environment variables."
+      "Database URL is not set. Add Neon storage variables (e.g. tamagotchi_POSTGRES_PRISMA_URL or tamagotchi_DATABASE_URL) to your environment."
     );
   }
 
