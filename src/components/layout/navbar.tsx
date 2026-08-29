@@ -36,70 +36,76 @@ export function Navbar({ user }: NavbarProps) {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-stone-200/80 bg-cream/95 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-          <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tama-cyan text-white shadow-sm">
-              <span className="text-lg font-bold">T</span>
+        <div className="mx-auto max-w-7xl">
+          <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
+            <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-tama-cyan text-white shadow-sm">
+                <span className="text-lg font-bold">T</span>
+              </div>
+              <span className="hidden font-bold text-stone-800 sm:inline">TamaDex</span>
+            </Link>
+
+            <nav className="relative z-10 hidden items-center gap-1 lg:flex">
+              {NAV_ITEMS.slice(1).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    pathname.startsWith(item.href)
+                      ? "bg-tama-cyan/10 text-tama-cyan"
+                      : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
+                  )}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <div className="relative z-10 hidden min-w-0 flex-1 px-2 md:block">
+              <GlobalSearch />
             </div>
-            <span className="hidden font-bold text-stone-800 sm:inline">TamaDex</span>
-          </Link>
 
-          <nav className="relative z-10 hidden items-center gap-1 lg:flex">
-            {NAV_ITEMS.slice(1).map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  pathname.startsWith(item.href)
-                    ? "bg-tama-cyan/10 text-tama-cyan"
-                    : "text-stone-600 hover:bg-stone-100 hover:text-stone-900"
-                )}
+            <div className="relative z-10 ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+              <Button size="sm" className="hidden sm:inline-flex" asChild>
+                <Link href="/collection/add">
+                  <Plus className="h-4 w-4" />
+                  Add
+                </Link>
+              </Button>
+              <Button size="icon" className="sm:hidden" asChild>
+                <Link href="/collection/add" aria-label="Add device">
+                  <Plus className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="ghost" size="icon" className="hidden sm:inline-flex" asChild>
+                <Link href="/settings" aria-label="Settings">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+              {user ? (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
+                  {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="px-2 text-xs sm:px-3 sm:text-sm" asChild>
+                  <Link href="/login">Sign in</Link>
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Toggle menu"
               >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="relative z-10 mx-auto w-full max-w-md flex-1 px-2">
-            <GlobalSearch />
+                <Menu className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
-          <div className="relative z-10 ml-auto flex items-center gap-2">
-            <Button size="sm" className="hidden sm:inline-flex" asChild>
-              <Link href="/collection/add">
-                <Plus className="h-4 w-4" />
-                Add
-              </Link>
-            </Button>
-            <Button size="icon" className="sm:hidden" asChild>
-              <Link href="/collection/add" aria-label="Add device">
-                <Plus className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex" asChild>
-              <Link href="/settings" aria-label="Settings">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
-            {user ? (
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
-                {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
-              </div>
-            ) : (
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/login">Sign in</Link>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Toggle menu"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+          <div className="border-t border-stone-100 px-3 pb-3 pt-2 md:hidden">
+            <GlobalSearch />
           </div>
         </div>
 
@@ -132,7 +138,7 @@ export function Navbar({ user }: NavbarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-1 text-[10px] font-medium",
+                "flex flex-col items-center gap-0.5 px-2 py-1 text-[10px] font-medium",
                 pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
                   ? "text-tama-cyan"
                   : "text-stone-400"

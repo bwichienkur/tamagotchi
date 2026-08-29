@@ -1,25 +1,28 @@
 import { CollectionPageClient } from "@/components/collection/collection-page-client";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { ensureDatabase } from "@/lib/db-query";
+import { withDatabase } from "@/lib/db-query";
 
 export default async function CollectionPage() {
-  await ensureDatabase();
   const session = await requireAuth();
 
-  const devices = await prisma.ownedDevice.findMany({
-    where: { userId: session.user.id },
-    include: {
-      deviceModel: { include: { family: true } },
-      shell: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const { devices, families, deviceModels } = await withDatabase(async () => {
+    const devices = await prisma.ownedDevice.findMany({
+      where: { userId: session.user.id },
+      include: {
+        deviceModel: { include: { family: true } },
+        shell: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
 
-  const families = await prisma.deviceFamily.findMany({ orderBy: { sortOrder: "asc" } });
-  const deviceModels = await prisma.deviceModel.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
+    const families = await prisma.deviceFamily.findMany({ orderBy: { sortOrder: "asc" } });
+    const deviceModels = await prisma.deviceModel.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    });
+
+    return { devices, families, deviceModels };
   });
 
   const stats = {

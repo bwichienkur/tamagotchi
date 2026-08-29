@@ -43,7 +43,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <Navbar user={session?.user} />
-          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+          <main className="min-h-[calc(100vh-4rem)] pb-20 md:pb-0">{children}</main>
           <Toaster position="bottom-right" richColors />
         </Providers>
       </body>

@@ -82,11 +82,15 @@ export function GlobalSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-full max-w-md items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-400 shadow-sm transition-colors hover:border-stone-300"
+        aria-label="Search Tamagotchi database"
+        className="flex h-9 w-full items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-400 shadow-sm transition-colors hover:border-stone-300 sm:h-10 sm:px-4"
       >
-        <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Search Tamagotchi database...</span>
-        <kbd className="hidden rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500 sm:inline">
+        <Search className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate text-left text-xs leading-none sm:text-sm">
+          <span className="sm:hidden">Search...</span>
+          <span className="hidden sm:inline">Search Tamagotchi database...</span>
+        </span>
+        <kbd className="hidden shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium leading-none text-stone-500 lg:inline">
           ⌘K
         </kbd>
       </button>
