@@ -225,6 +225,18 @@ export function buildSectionDeviceName(pageName: string, sectionLabel: string | 
   return `${pageName} ${sectionLabel}`;
 }
 
+/** Flatten section shells for single-device pages (e.g. licensed Nanos). */
+export function flattenSectionShells(
+  sections: TamaShellSection[]
+): Array<TamaShellShell & { sectionLabel: string | null }> {
+  return sections.flatMap((section) =>
+    section.shells.map((shell) => ({
+      ...shell,
+      sectionLabel: section.sectionLabel,
+    }))
+  );
+}
+
 /** Build stable slug for a section device on a TamaShell catalog page. */
 export function buildSectionDeviceSlug(pageSlug: string, sectionLabel: string | null): string {
   if (!sectionLabel) return pageSlug;

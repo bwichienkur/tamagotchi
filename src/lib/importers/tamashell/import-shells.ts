@@ -2,6 +2,33 @@ import { createSlug, normalizeName } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
 import type { TamaShellShell } from "./index";
 
+export type TamaShellScrapedShell = TamaShellShell & {
+  sectionLabel?: string | null;
+};
+
+function uniqueShellSlug(
+  shellName: string,
+  sectionLabel: string | null | undefined,
+  usedSlugs: Set<string>
+): string {
+  const candidates = [
+    createSlug(shellName),
+    sectionLabel ? createSlug(`${sectionLabel} ${shellName}`) : null,
+    createSlug(`${shellName}-${usedSlugs.size + 1}`),
+  ].filter(Boolean) as string[];
+
+  for (const slug of candidates) {
+    if (!usedSlugs.has(slug)) {
+      usedSlugs.add(slug);
+      return slug;
+    }
+  }
+
+  const fallback = createSlug(`${sectionLabel ?? "shell"}-${shellName}-${usedSlugs.size + 1}`);
+  usedSlugs.add(fallback);
+  return fallback;
+}
+
 async function findExistingShell(shellName: string, deviceModelId: string) {
   const normalized = normalizeName(shellName);
   const shells = await prisma.shell.findMany({ where: { deviceModelId } });
@@ -17,13 +44,23 @@ async function findExistingShell(shellName: string, deviceModelId: string) {
 /** Create TamaShell shells on a device when they are not already present. */
 export async function importMissingTamaShellShells(
   deviceModelId: string,
-  scrapedShells: TamaShellShell[]
+  scrapedShells: TamaShellScrapedShell[],
+  options?: { storeSectionInWave?: boolean }
 ): Promise<number> {
   if (scrapedShells.length === 0) return 0;
 
   const deviceModel = await prisma.deviceModel.findUniqueOrThrow({
     where: { id: deviceModelId },
   });
+
+  const usedSlugs = new Set(
+    (
+      await prisma.shell.findMany({
+        where: { deviceModelId },
+        select: { slug: true },
+      })
+    ).map((shell) => shell.slug)
+  );
 
   let imported = 0;
   let heroImage = deviceModel.heroImage;
@@ -38,17 +75,26 @@ export async function importMissingTamaShellShells(
           data: { primaryImage: shell.imageUrl, lastCheckedAt: new Date() },
         });
       }
+      if (options?.storeSectionInWave && shell.sectionLabel && !existing.wave) {
+        await prisma.shell.update({
+          where: { id: existing.id },
+          data: { wave: shell.sectionLabel, lastCheckedAt: new Date() },
+        });
+      }
       continue;
     }
+
+    const slug = uniqueShellSlug(name, shell.sectionLabel, usedSlugs);
 
     await prisma.shell.create({
       data: {
         deviceModelId,
         name,
-        slug: createSlug(name),
+        slug,
         primaryImage: shell.imageUrl,
         sourceUrl: shell.sourceUrl,
         sourceName: "TamaShell",
+        wave: options?.storeSectionInWave ? shell.sectionLabel ?? undefined : undefined,
         importedAt: new Date(),
         lastCheckedAt: new Date(),
       },

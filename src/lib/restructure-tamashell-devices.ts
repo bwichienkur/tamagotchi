@@ -4,8 +4,10 @@ import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
+  isSingleDeviceTamaShellPage,
   type TamaShellCatalogEntry,
 } from "@/lib/importers/tamashell/catalog";
+import { consolidateLicensedNanosDevices } from "@/lib/consolidate-licensed-nanos";
 import {
   importMissingTamaShellShells,
   moveMatchingTamaShellShells,
@@ -13,6 +15,7 @@ import {
 import {
   buildSectionDeviceName,
   fetchTamaShellPage,
+  flattenSectionShells,
   parseShellSectionsFromHtml,
 } from "@/lib/importers/tamashell/scraper";
 
@@ -20,6 +23,7 @@ export interface RestructureTamaShellResult {
   devicesCreated: number;
   devicesRenamed: number;
   licensedRenamed: number;
+  licensedConsolidated: number;
   shellsMoved: number;
   shellsImported: number;
   devicesRemoved: number;
@@ -146,6 +150,7 @@ export async function restructureTamaShellDevices(options?: {
       devicesCreated: 0,
       devicesRenamed: 0,
       licensedRenamed,
+      licensedConsolidated: 0,
       shellsMoved: 0,
       shellsImported: 0,
       devicesRemoved: 0,
@@ -157,6 +162,7 @@ export async function restructureTamaShellDevices(options?: {
   let shellsMoved = 0;
   let shellsImported = 0;
   let devicesRemoved = 0;
+  let licensedConsolidated = 0;
 
   const licensedRenamed = await renameLicensedTamagotchiNanoDevices();
 
@@ -170,6 +176,21 @@ export async function restructureTamaShellDevices(options?: {
       const pageUrl = `https://www.tamashell.com/${entry.slug}`;
       const html = await fetchTamaShellPage(`/${entry.slug}`);
       const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
+
+      if (sections && isSingleDeviceTamaShellPage(entry)) {
+        const consolidated = await consolidateLicensedNanosDevices();
+        licensedConsolidated += consolidated.shellsMoved;
+        devicesRemoved += consolidated.devicesRemoved;
+
+        const flatShells = flattenSectionShells(sections);
+        shellsImported += await importMissingTamaShellShells(
+          consolidated.canonicalDeviceId,
+          flatShells,
+          { storeSectionInWave: true }
+        );
+        continue;
+      }
+
       if (!sections) continue;
 
       const targetModelIds = new Set<string>();
@@ -224,6 +245,7 @@ export async function restructureTamaShellDevices(options?: {
     devicesCreated,
     devicesRenamed,
     licensedRenamed,
+    licensedConsolidated,
     shellsMoved,
     shellsImported,
     devicesRemoved,

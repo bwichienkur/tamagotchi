@@ -62,6 +62,13 @@ export const TAMASHELL_CATALOG: TamaShellCatalogEntry[] = [
   { slug: "tamawalkie", name: "TamaWalkie", family: "Others" },
 ];
 
+/** TamaShell pages kept as one device; franchise sections become shells (not devices). */
+export const TAMASHELL_SINGLE_DEVICE_SLUGS = new Set(["licensed"]);
+
+export function isSingleDeviceTamaShellPage(entry: TamaShellCatalogEntry): boolean {
+  return TAMASHELL_SINGLE_DEVICE_SLUGS.has(entry.slug);
+}
+
 export const FAMILY_SLUG_MAP: Record<TamaShellFamily, string> = {
   Vintage: "vintage",
   Connection: "connection",
