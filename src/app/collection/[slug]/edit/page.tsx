@@ -67,6 +67,7 @@ export default async function EditDevicePage({
           showMoreInfo: device.showMoreInfo,
           purchaseDate: device.purchaseDate?.toISOString() ?? null,
           purchasePrice: device.purchasePrice,
+          estimatedValue: device.estimatedValue,
           purchaseCurrency: device.purchaseCurrency,
           purchasedFrom: device.purchasedFrom,
           workingStatus: device.workingStatus,

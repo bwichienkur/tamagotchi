@@ -71,6 +71,7 @@ export default async function OwnedDevicePage({
       title: "Purchase Information",
       content: `<p>Purchased: ${formatDate(device.purchaseDate)}</p>
         <p>Price: ${formatCurrency(device.purchasePrice, device.purchaseCurrency ?? "USD")}</p>
+        <p>Estimated value: ${formatCurrency(device.estimatedValue, device.purchaseCurrency ?? "USD")}</p>
         ${device.purchasedFrom ? `<p>From: ${device.purchasedFrom}</p>` : ""}`,
     },
     {

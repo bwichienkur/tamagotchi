@@ -27,6 +27,7 @@ export const ownedDeviceInputSchema = z.object({
   showMoreInfo: z.string().optional().nullable(),
   purchaseDate: z.string().optional().nullable(),
   purchasePrice: z.number().optional().nullable(),
+  estimatedValue: z.number().optional().nullable(),
   purchaseCurrency: z.string().optional(),
   purchasedFrom: z.string().optional().nullable(),
   serialNumber: z.string().optional().nullable(),

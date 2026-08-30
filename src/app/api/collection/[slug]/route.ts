@@ -86,6 +86,7 @@ export async function PATCH(
         purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
       }),
       ...(data.purchasePrice !== undefined && { purchasePrice: data.purchasePrice }),
+      ...(data.estimatedValue !== undefined && { estimatedValue: data.estimatedValue }),
       ...(data.purchaseCurrency !== undefined && {
         purchaseCurrency: data.purchaseCurrency ?? "USD",
       }),

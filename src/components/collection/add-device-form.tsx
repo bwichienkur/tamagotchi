@@ -57,6 +57,7 @@ export function AddDeviceForm({
   const [showMoreInfo, setShowMoreInfo] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
+  const [estimatedValue, setEstimatedValue] = useState("");
   const [purchasedFrom, setPurchasedFrom] = useState("");
   const [workingStatus, setWorkingStatus] = useState<
     "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS"
@@ -238,6 +239,7 @@ export function AddDeviceForm({
           showMoreInfo: showMoreInfo || undefined,
           purchaseDate: purchaseDate || undefined,
           purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
+          estimatedValue: estimatedValue ? parseFloat(estimatedValue) : undefined,
           purchasedFrom: purchasedFrom || undefined,
           workingStatus,
           favorite,
@@ -497,7 +499,7 @@ export function AddDeviceForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="purchaseDate">Purchase Date</Label>
               <Input
@@ -515,6 +517,17 @@ export function AddDeviceForm({
                 step="0.01"
                 value={purchasePrice}
                 onChange={(e) => setPurchasePrice(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estimatedValue">Estimated Value</Label>
+              <Input
+                id="estimatedValue"
+                type="number"
+                step="0.01"
+                value={estimatedValue}
+                onChange={(e) => setEstimatedValue(e.target.value)}
                 placeholder="0.00"
               />
             </div>
