@@ -21,12 +21,12 @@ export function DeviceActionsMenu({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={cn("flex flex-col items-end gap-2", className)}>
+    <div className={cn("flex items-end gap-2", open && "flex-col", className)}>
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="h-8 w-8 text-stone-500 hover:text-stone-800"
+        className="h-7 w-7 shrink-0 text-stone-500 hover:text-stone-800"
         onClick={() => setOpen((current) => !current)}
         aria-label={open ? "Hide device actions" : "Show device actions"}
         aria-expanded={open}
