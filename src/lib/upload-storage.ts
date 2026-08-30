@@ -5,6 +5,8 @@ import path from "path";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { getBlobReadWriteToken, hasBlobStorage } from "@/lib/blob-env";
+import { normalizeUploadedImageBuffer } from "@/lib/heic-convert-server";
+import { isHeicBuffer } from "@/lib/heic";
 
 export { getBlobReadWriteToken, hasBlobStorage };
 
@@ -46,6 +48,9 @@ function sniffMimeFromBuffer(buffer: Buffer): string | null {
     (buffer.toString("ascii", 0, 6) === "GIF87a" || buffer.toString("ascii", 0, 6) === "GIF89a")
   ) {
     return "image/gif";
+  }
+  if (isHeicBuffer(buffer)) {
+    return "image/heic";
   }
   return null;
 }
@@ -116,8 +121,7 @@ async function saveToBlob(buffer: Buffer, filename: string, mimeType: string): P
 }
 
 export async function saveUploadedImage(file: File, userId: string): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  let buffer = Buffer.from(await file.arrayBuffer());
 
   if (buffer.length === 0) {
     throw new Error("The selected file is empty.");
@@ -127,10 +131,26 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
     throw new Error("Image must be 10 MB or smaller.");
   }
 
-  const mimeType = resolveImageMimeType(file, buffer);
+  let mimeType: string | null = null;
+
+  try {
+    const converted = await normalizeUploadedImageBuffer(file, buffer);
+    if (converted) {
+      buffer = Buffer.from(converted.buffer);
+      mimeType = converted.mimeType;
+    }
+  } catch (error) {
+    console.error("HEIC conversion failed:", error);
+    throw new Error("Could not process iPhone photo. Try saving as JPEG in Photos first.");
+  }
+
   if (!mimeType) {
+    mimeType = resolveImageMimeType(file, buffer);
+  }
+
+  if (!mimeType || mimeType === "image/heic") {
     throw new Error(
-      "Unsupported image format. Please use JPEG, PNG, WebP, or GIF (HEIC is not supported)."
+      "Unsupported image format. Please use JPEG, PNG, WebP, GIF, or iPhone HEIC photos."
     );
   }
 

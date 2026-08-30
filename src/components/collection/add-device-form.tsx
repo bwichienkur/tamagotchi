@@ -177,7 +177,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
                 </span>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   className="hidden"
                   onChange={(e) => handlePhotoUpload(e.target.files)}
                 />
