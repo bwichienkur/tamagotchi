@@ -76,6 +76,12 @@ async function main() {
     }
   } else {
     console.log("Skipping TamaShell import (SKIP_TAMASHELL_IMPORT=true)");
+    try {
+      const backfill = await backfillDeviceGenerations({ skipNetwork: true });
+      console.log("Generation backfill (db-only):", backfill);
+    } catch (error) {
+      console.error("Generation backfill failed (continuing seed):", error);
+    }
   }
 
   console.log(`Seed completed. Demo user: ${DEMO_EMAIL} / demo1234`);
