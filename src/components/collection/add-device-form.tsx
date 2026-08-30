@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
+import { CreatableCombobox, DeviceModelComboboxOption } from "@/components/forms/creatable-combobox";
 import { PhotoFrameEditor } from "@/components/collection/photo-frame-editor";
 import { FramedImage } from "@/components/ui/framed-image";
 import { uploadImage } from "@/lib/upload-image";
@@ -26,15 +26,25 @@ import {
 import { cn } from "@/lib/utils";
 import { getConditionLabel } from "@/lib/condition-labels";
 
-interface AddDeviceFormProps {
-  deviceModels: ComboboxOption[];
+interface FamilyOption {
+  id: string;
+  name: string;
 }
 
-export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProps) {
+interface AddDeviceFormProps {
+  deviceModels: DeviceModelComboboxOption[];
+  families: FamilyOption[];
+}
+
+export function AddDeviceForm({
+  deviceModels: initialModels,
+  families,
+}: AddDeviceFormProps) {
   const router = useRouter();
   const [deviceModels, setDeviceModels] = useState(initialModels);
   const [deviceModelId, setDeviceModelId] = useState<string>();
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
+  const [familyId, setFamilyId] = useState(families[0]?.id ?? "");
   const [shellId, setShellId] = useState<string>();
   const [newShellName, setNewShellName] = useState<string>();
   const { shellOptions, loadingShells, createShell } = useShellOptions(deviceModelId);
@@ -56,6 +66,8 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  const isCreatingDeviceType = Boolean(newDeviceModelName);
+
   const resetShellSelection = () => {
     setShellId(undefined);
     setNewShellName(undefined);
@@ -69,18 +81,26 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     } else {
       setDeviceModelId(value);
       setNewDeviceModelName(undefined);
+      const selected = deviceModels.find((model) => model.value === value);
+      if (selected?.familyId) {
+        setFamilyId(selected.familyId);
+      }
       if (label) {
         setDeviceModels((current) =>
           current.some((model) => model.value === value)
             ? current
-            : [...current, { value, label }]
+            : [...current, { value, label, familyId: selected?.familyId }]
         );
       }
     }
   };
 
   const handleCreateDeviceModel = async (label: string) => {
-    const created = await createDeviceModelOption(label);
+    if (!familyId) {
+      toast.error("Select a family for the device type");
+      return null;
+    }
+    const created = await createDeviceModelOption(label, familyId);
     if (!created) {
       toast.error("Failed to save device type");
       return null;
@@ -88,7 +108,9 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     setDeviceModels((current) =>
       current.some((model) => model.value === created.value)
         ? current
-        : [...current, created].sort((a, b) => a.label.localeCompare(b.label))
+        : [...current, { ...created, familyId }].sort((a, b) =>
+            a.label.localeCompare(b.label)
+          )
     );
     setDeviceModelId(created.value);
     setNewDeviceModelName(undefined);
@@ -184,6 +206,10 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
       toast.error("Please select or create a device type");
       return;
     }
+    if (newDeviceModelName && !familyId) {
+      toast.error("Select a family for the device type");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -200,6 +226,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
         body: JSON.stringify({
           deviceModelId,
           newDeviceModelName,
+          familyId: newDeviceModelName ? familyId : undefined,
           shellId,
           newShellName,
           primaryPhoto,
@@ -380,6 +407,28 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
             />
             <p className="text-xs text-stone-500">
               Type a name and press Enter to add a new device type to your library.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="device-family">Family</Label>
+            <select
+              id="device-family"
+              value={familyId}
+              onChange={(event) => setFamilyId(event.target.value)}
+              disabled={!isCreatingDeviceType}
+              className="h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm disabled:bg-stone-50 disabled:text-stone-500"
+            >
+              {families.map((family) => (
+                <option key={family.id} value={family.id}>
+                  {family.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-stone-500">
+              {isCreatingDeviceType
+                ? "Choose Vintage, Connection, Modern, or another family for filtering."
+                : "Family is set from the selected device type."}
             </p>
           </div>
 

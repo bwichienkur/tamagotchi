@@ -16,15 +16,21 @@ export default async function EditDevicePage({
 
   const device = await prisma.ownedDevice.findFirst({
     where: { slug, userId: session.user.id },
-    include: { deviceModel: true, shell: true },
+    include: { deviceModel: { include: { family: true } }, shell: true },
   });
 
   if (!device) notFound();
 
-  const models = await prisma.deviceModel.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const [models, families] = await Promise.all([
+    prisma.deviceModel.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, familyId: true },
+    }),
+    prisma.deviceFamily.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -40,10 +46,16 @@ export default async function EditDevicePage({
         </p>
       </div>
       <EditDeviceForm
-        deviceModels={models.map((m) => ({ value: m.id, label: m.name }))}
+        deviceModels={models.map((m) => ({
+          value: m.id,
+          label: m.name,
+          familyId: m.familyId,
+        }))}
+        families={families}
         device={{
           slug: device.slug,
           deviceModelId: device.deviceModelId,
+          deviceModelFamilyId: device.deviceModel.familyId,
           shellId: device.shellId,
           shellName: device.shell?.name ?? device.customShellName,
           nickname: device.nickname,

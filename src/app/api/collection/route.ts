@@ -4,11 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug, createUniqueSlug } from "@/lib/slug";
 import { ensurePhotoFramesColumn } from "@/lib/ensure-photo-frames";
+import { resolveDeviceModelId } from "@/lib/resolve-owned-device-relations";
 import { z } from "zod";
 
 const createOwnedDeviceSchema = z.object({
   deviceModelId: z.string().optional(),
   newDeviceModelName: z.string().optional(),
+  familyId: z.string().optional(),
   shellId: z.string().optional(),
   newShellName: z.string().optional(),
   nickname: z.string().optional(),
@@ -77,28 +79,12 @@ export async function POST(request: NextRequest) {
   let deviceModelId = data.deviceModelId;
 
   if (data.newDeviceModelName) {
-    const slug = createSlug(data.newDeviceModelName);
-    const existing = await prisma.deviceModel.findUnique({ where: { slug } });
-    if (existing) {
-      deviceModelId = existing.id;
-    } else {
-      const modernFamily = await prisma.deviceFamily.findFirst({
-        where: { slug: "modern" },
-      });
-      const familyId =
-        modernFamily?.id ??
-        (await prisma.deviceFamily.create({
-          data: { name: "Other", slug: "other", sortOrder: 99 },
-        })).id;
-
-      const created = await prisma.deviceModel.create({
-        data: {
-          name: data.newDeviceModelName,
-          slug,
-          familyId,
-        },
-      });
-      deviceModelId = created.id;
+    const resolved = await resolveDeviceModelId({
+      newDeviceModelName: data.newDeviceModelName,
+      familyId: data.familyId,
+    });
+    if (resolved) {
+      deviceModelId = resolved;
     }
   }
 

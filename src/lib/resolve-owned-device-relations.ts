@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { createSlug } from "@/lib/slug";
-import { getOrCreateDefaultFamilyId } from "@/lib/device-family";
+import { resolveFamilyIdForCreate } from "@/lib/device-family";
 import type { OwnedDeviceInput } from "@/lib/owned-device-schema";
 
 export async function resolveDeviceModelId(
-  data: Pick<OwnedDeviceInput, "deviceModelId" | "newDeviceModelName">
+  data: Pick<OwnedDeviceInput, "deviceModelId" | "newDeviceModelName" | "familyId">
 ): Promise<string | undefined> {
   let deviceModelId = data.deviceModelId;
 
@@ -18,7 +18,7 @@ export async function resolveDeviceModelId(
         data: {
           name: data.newDeviceModelName,
           slug,
-          familyId: await getOrCreateDefaultFamilyId(),
+          familyId: await resolveFamilyIdForCreate(data.familyId),
         },
       });
       deviceModelId = created.id;

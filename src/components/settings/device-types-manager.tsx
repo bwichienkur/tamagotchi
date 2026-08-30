@@ -19,14 +19,25 @@ interface DeviceTypeRecord {
   };
 }
 
-export function DeviceTypesManager() {
+interface FamilyOption {
+  id: string;
+  name: string;
+}
+
+interface DeviceTypesManagerProps {
+  families: FamilyOption[];
+}
+
+export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
   const [deviceTypes, setDeviceTypes] = useState<DeviceTypeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
+  const [newFamilyId, setNewFamilyId] = useState(families[0]?.id ?? "");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const [editFamilyId, setEditFamilyId] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -62,7 +73,7 @@ export function DeviceTypesManager() {
   const handleAdd = async (event: React.FormEvent) => {
     event.preventDefault();
     const name = newName.trim();
-    if (!name) return;
+    if (!name || !newFamilyId) return;
 
     setAdding(true);
     try {
@@ -70,7 +81,7 @@ export function DeviceTypesManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, familyId: newFamilyId }),
       });
 
       if (!res.ok) {
@@ -95,11 +106,13 @@ export function DeviceTypesManager() {
   const startEdit = (type: DeviceTypeRecord) => {
     setEditingId(type.id);
     setEditName(type.name);
+    setEditFamilyId(type.family.id);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
+    setEditFamilyId("");
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -115,7 +128,7 @@ export function DeviceTypesManager() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, familyId: editFamilyId }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -171,14 +184,30 @@ export function DeviceTypesManager() {
 
   return (
     <div className="min-w-0 space-y-3">
-      <form onSubmit={handleAdd} className="flex min-w-0 gap-2">
+      <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+        <select
+          value={newFamilyId}
+          onChange={(event) => setNewFamilyId(event.target.value)}
+          className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-sm"
+        >
+          {families.map((family) => (
+            <option key={family.id} value={family.id}>
+              {family.name}
+            </option>
+          ))}
+        </select>
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
           placeholder="Add device type..."
-          className="h-9 flex-1"
+          className="h-9"
         />
-        <Button type="submit" size="sm" disabled={adding || !newName.trim()} className="shrink-0">
+        <Button
+          type="submit"
+          size="sm"
+          disabled={adding || !newName.trim() || !newFamilyId}
+          className="h-9 shrink-0"
+        >
           <Plus className="h-4 w-4" />
           {adding ? "Adding..." : "Add"}
         </Button>
@@ -225,7 +254,19 @@ export function DeviceTypesManager() {
                 className="min-w-0 overflow-hidden rounded-lg border border-stone-200 bg-white px-3 py-2"
               >
                 {isEditing ? (
-                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <select
+                      value={editFamilyId}
+                      onChange={(event) => setEditFamilyId(event.target.value)}
+                      className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-sm"
+                    >
+                      {families.map((family) => (
+                        <option key={family.id} value={family.id}>
+                          {family.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       value={editName}
                       onChange={(event) => setEditName(event.target.value)}
@@ -269,12 +310,16 @@ export function DeviceTypesManager() {
                         <span className="hidden sm:inline">Cancel</span>
                       </Button>
                     </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex min-w-0 items-center gap-2">
-                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
-                      {type.name}
-                    </p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-stone-900">
+                        {type.name}
+                      </p>
+                      <p className="truncate text-xs text-stone-500">{type.family.name}</p>
+                    </div>
                     <Button
                       type="button"
                       size="sm"

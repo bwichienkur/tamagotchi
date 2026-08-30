@@ -3,10 +3,11 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
-import { getOrCreateDefaultFamilyId } from "@/lib/device-family";
+import { resolveFamilyIdForCreate } from "@/lib/device-family";
 
 const createDeviceModelSchema = z.object({
   name: z.string().trim().min(1).max(120),
+  familyId: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -59,9 +60,9 @@ export async function POST(request: NextRequest) {
     data: {
       name,
       slug,
-      familyId: await getOrCreateDefaultFamilyId(),
+      familyId: await resolveFamilyIdForCreate(parsed.data.familyId),
     },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, familyId: true },
   });
 
   return NextResponse.json(created, { status: 201 });
