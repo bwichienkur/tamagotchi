@@ -1,8 +1,11 @@
 import "@/lib/bootstrap-env";
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { authConfig } from "@/lib/auth.config";
 import { getAuthSecret } from "@/lib/auth-secret";
+
+const { auth } = NextAuth(authConfig);
 
 const protectedRoutes = ["/collection", "/admin", "/settings", "/wishlist", "/wiki/new"];
 const protectedPrefixes = [
@@ -17,34 +20,38 @@ const protectedPrefixes = [
   "/api/wiki",
 ];
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  const isProtected =
+function isProtectedPath(pathname: string): boolean {
+  return (
     protectedRoutes.includes(pathname) ||
     protectedPrefixes.some((p) => pathname.startsWith(p)) ||
     pathname.endsWith("/edit") ||
-    pathname.includes("/history");
+    pathname.includes("/history")
+  );
+}
 
-  if (!isProtected) return NextResponse.next();
+export default auth((request) => {
+  const { pathname } = request.nextUrl;
 
-  const secret = getAuthSecret();
-  if (!secret) {
+  if (!isProtectedPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!getAuthSecret()) {
     console.error("Middleware: AUTH_SECRET is not configured");
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Auth is not configured" }, { status: 503 });
+    }
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const token = await getToken({
-    req: request,
-    secret,
-    secureCookie: request.nextUrl.protocol === "https:",
-  });
-
-  if (!token) {
+  if (!request.auth?.user?.id) {
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Please sign in to upload images." },
+        { status: 401 }
+      );
     }
 
     const loginUrl = new URL("/login", request.url);
@@ -52,7 +59,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/admin") && token.role !== "admin") {
+  if (pathname.startsWith("/admin") && request.auth.user.role !== "admin") {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -60,7 +67,7 @@ export async function middleware(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: [
@@ -80,4 +87,9 @@ export const config = {
     "/api/import/:path*",
     "/api/wiki/:path*",
   ],
+};
+
+// NextAuth middleware types request with auth property
+export type AuthMiddlewareRequest = NextRequest & {
+  auth: { user?: { id?: string; role?: string } } | null;
 };

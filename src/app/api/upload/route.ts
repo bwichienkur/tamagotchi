@@ -34,17 +34,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const session = await getApiSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true },
-  });
-
-  if (!user) {
     return NextResponse.json(
-      { error: "Your session is outdated. Please sign out and sign in again." },
+      { error: "Please sign in to upload images." },
       { status: 401 }
     );
   }
@@ -57,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const url = await saveUploadedImage(file, user.id);
+    const url = await saveUploadedImage(file, session.user.id);
     return NextResponse.json({ url });
   } catch (error) {
     console.error("Upload failed:", error);
