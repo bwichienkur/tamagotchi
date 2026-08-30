@@ -11,7 +11,9 @@ import { ConditionBadge } from "@/components/collection/condition-badge";
 import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
 import { Button } from "@/components/ui/button";
+import { FramedImage } from "@/components/ui/framed-image";
 import { RemoteImage } from "@/components/ui/remote-image";
+import { getAdditionalPhotoFrame, getPrimaryPhotoFrame, parsePhotoFrames } from "@/lib/photo-frame";
 
 export default async function OwnedDevicePage({
   params,
@@ -32,6 +34,8 @@ export default async function OwnedDevicePage({
 
   if (!device) notFound();
 
+  const photoFrames = parsePhotoFrames(device.photoFrames);
+  const primaryFrame = getPrimaryPhotoFrame(photoFrames);
   const shellName = device.shell?.name ?? device.customShellName ?? "Unknown shell";
   const ownedCount = await prisma.ownedDevice.count({
     where: { userId: session.user.id, deviceModelId: device.deviceModelId },
@@ -174,12 +178,20 @@ export default async function OwnedDevicePage({
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {device.primaryPhoto && (
                   <div className="relative aspect-square overflow-hidden rounded-xl">
-                    <RemoteImage src={device.primaryPhoto} alt="Primary" fill />
+                    <FramedImage
+                      src={device.primaryPhoto}
+                      alt="Primary"
+                      frame={primaryFrame}
+                    />
                   </div>
                 )}
                 {device.additionalPhotos.map((url, i) => (
                   <div key={i} className="relative aspect-square overflow-hidden rounded-xl">
-                    <RemoteImage src={url} alt={`Photo ${i + 1}`} fill />
+                    <FramedImage
+                      src={url}
+                      alt={`Photo ${i + 1}`}
+                      frame={getAdditionalPhotoFrame(photoFrames, i)}
+                    />
                   </div>
                 ))}
               </div>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { EditDeviceForm } from "@/components/collection/edit-device-form";
 import { Button } from "@/components/ui/button";
+import { parsePhotoFrames } from "@/lib/photo-frame";
 
 export default async function EditDevicePage({
   params,
@@ -46,6 +47,7 @@ export default async function EditDevicePage({
           nickname: device.nickname,
           primaryPhoto: device.primaryPhoto,
           additionalPhotos: device.additionalPhotos,
+          photoFrames: parsePhotoFrames(device.photoFrames),
           conditionBadge: device.conditionBadge,
           conditionNotes: device.conditionNotes,
           showMoreInfo: device.showMoreInfo,

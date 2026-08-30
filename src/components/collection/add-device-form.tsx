@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { uploadImage } from "@/lib/upload-image";
+import { createDeviceModelOption } from "@/lib/create-device-model";
 import { cn } from "@/lib/utils";
 
 interface AddDeviceFormProps {
@@ -46,7 +47,30 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     } else {
       setDeviceModelId(value);
       setNewDeviceModelName(undefined);
+      if (label) {
+        setDeviceModels((current) =>
+          current.some((model) => model.value === value)
+            ? current
+            : [...current, { value, label }]
+        );
+      }
     }
+  };
+
+  const handleCreateDeviceModel = async (label: string) => {
+    const created = await createDeviceModelOption(label);
+    if (!created) {
+      toast.error("Failed to save device type");
+      return null;
+    }
+    setDeviceModels((current) =>
+      current.some((model) => model.value === created.value)
+        ? current
+        : [...current, created].sort((a, b) => a.label.localeCompare(b.label))
+    );
+    setDeviceModelId(created.value);
+    setNewDeviceModelName(undefined);
+    return created;
   };
 
   const uploadFile = async (file: File): Promise<string> => uploadImage(file);
@@ -178,10 +202,15 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
             <CreatableCombobox
               options={deviceModels}
               value={deviceModelId}
+              pendingLabel={newDeviceModelName}
               onValueChange={handleDeviceChange}
-              placeholder="Search or enter device type..."
-              createLabel={(v) => `Create "${v}"`}
+              onCreateOption={handleCreateDeviceModel}
+              placeholder="Type a device type..."
+              createLabel={(v) => `Add "${v}"`}
             />
+            <p className="text-xs text-stone-500">
+              Type a name and press Enter to add a new device type to your library.
+            </p>
           </div>
 
           <div className="space-y-2">

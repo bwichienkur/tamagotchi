@@ -199,6 +199,7 @@ model OwnedDevice {
   nickname         String?
   primaryPhoto     String?
   additionalPhotos String[]        @default([])
+  photoFrames      Json?
   conditionBadge   ConditionBadge  @default(NONE)
   conditionNotes   String?         @db.Text
   showMoreInfo     String?         @db.Text

@@ -1,5 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { getApiSession } from "@/lib/session";
+import { createSlug } from "@/lib/slug";
+
+const createDeviceModelSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+});
+
+async function getOrCreateFamilyId() {
+  const modernFamily = await prisma.deviceFamily.findFirst({
+    where: { slug: "modern" },
+  });
+  if (modernFamily) return modernFamily.id;
+
+  const otherFamily = await prisma.deviceFamily.findFirst({
+    where: { slug: "other" },
+  });
+  if (otherFamily) return otherFamily.id;
+
+  const created = await prisma.deviceFamily.create({
+    data: { name: "Other", slug: "other", sortOrder: 99 },
+  });
+  return created.id;
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -19,4 +43,42 @@ export async function GET(request: NextRequest) {
   });
 
   return NextResponse.json(models);
+}
+
+export async function POST(request: NextRequest) {
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const parsed = createDeviceModelSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const name = parsed.data.name;
+  const slug = createSlug(name);
+
+  const existing = await prisma.deviceModel.findFirst({
+    where: {
+      OR: [{ slug }, { name: { equals: name, mode: "insensitive" } }],
+    },
+    select: { id: true, name: true, slug: true },
+  });
+
+  if (existing) {
+    return NextResponse.json(existing);
+  }
+
+  const created = await prisma.deviceModel.create({
+    data: {
+      name,
+      slug,
+      familyId: await getOrCreateFamilyId(),
+    },
+    select: { id: true, name: true, slug: true },
+  });
+
+  return NextResponse.json(created, { status: 201 });
 }

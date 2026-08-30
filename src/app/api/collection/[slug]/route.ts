@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { ownedDeviceInputSchema } from "@/lib/owned-device-schema";
@@ -69,6 +70,9 @@ export async function PATCH(
       ...(data.primaryPhoto !== undefined && { primaryPhoto: data.primaryPhoto }),
       ...(data.additionalPhotos !== undefined && {
         additionalPhotos: data.additionalPhotos,
+      }),
+      ...(data.photoFrames !== undefined && {
+        photoFrames: data.photoFrames as Prisma.InputJsonValue,
       }),
       ...(data.conditionBadge !== undefined && { conditionBadge: data.conditionBadge }),
       ...(data.conditionNotes !== undefined && { conditionNotes: data.conditionNotes }),

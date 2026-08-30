@@ -1,15 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Check, ChevronsUpDown, Plus } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import { Check, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 
 export interface ComboboxOption {
   value: string;
@@ -19,113 +13,221 @@ export interface ComboboxOption {
 interface CreatableComboboxProps {
   options: ComboboxOption[];
   value?: string;
+  pendingLabel?: string;
   onValueChange: (value: string, isNew?: boolean, label?: string) => void;
+  onCreateOption?: (label: string) => Promise<ComboboxOption | null>;
   placeholder?: string;
   createLabel?: (value: string) => string;
   emptyMessage?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export function CreatableCombobox({
   options,
   value,
+  pendingLabel,
   onValueChange,
-  placeholder = "Search or create...",
-  createLabel = (v) => `Create "${v}"`,
-  emptyMessage = "No results found.",
+  onCreateOption,
+  placeholder = "Search or type to create...",
+  createLabel = (v) => `Add "${v}"`,
+  emptyMessage = "Type a name and press Enter to add it.",
   className,
+  disabled = false,
 }: CreatableComboboxProps) {
+  const listId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [inputValue, setInputValue] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [highlightIndex, setHighlightIndex] = useState(0);
 
-  const selected = options.find((o) => o.value === value);
-
-  const filtered = options.filter((o) =>
-    o.label.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const showCreate =
-    search.trim().length > 0 &&
-    !options.some(
-      (o) => o.label.toLowerCase() === search.trim().toLowerCase()
-    );
-
-  const handleSelect = useCallback(
-    (optionValue: string, isNew = false, label?: string) => {
-      onValueChange(optionValue, isNew, label);
-      setOpen(false);
-      setSearch("");
-    },
-    [onValueChange]
-  );
+  const selected = options.find((option) => option.value === value);
+  const displayValue = selected?.label ?? pendingLabel ?? "";
 
   useEffect(() => {
-    if (!open) setSearch("");
-  }, [open]);
+    if (!open) {
+      setInputValue(displayValue);
+    }
+  }, [displayValue, open]);
+
+  const filtered = options.filter((option) =>
+    option.label.toLowerCase().includes(inputValue.trim().toLowerCase())
+  );
+
+  const trimmedInput = inputValue.trim();
+  const exactMatch = options.find(
+    (option) => option.label.toLowerCase() === trimmedInput.toLowerCase()
+  );
+  const showCreate =
+    trimmedInput.length > 0 &&
+    !exactMatch &&
+    (!selected || selected.label.toLowerCase() !== trimmedInput.toLowerCase());
+
+  const listItems = [
+    ...filtered.map((option) => ({ type: "option" as const, option })),
+    ...(showCreate ? [{ type: "create" as const, label: trimmedInput }] : []),
+  ];
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [inputValue, open]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  const selectExisting = (option: ComboboxOption) => {
+    onValueChange(option.value, false, option.label);
+    setInputValue(option.label);
+    setOpen(false);
+  };
+
+  const selectNew = async (label: string) => {
+    const normalized = label.trim();
+    if (!normalized) return;
+
+    const existing = options.find(
+      (option) => option.label.toLowerCase() === normalized.toLowerCase()
+    );
+    if (existing) {
+      selectExisting(existing);
+      return;
+    }
+
+    if (onCreateOption) {
+      setCreating(true);
+      try {
+        const created = await onCreateOption(normalized);
+        if (created) {
+          onValueChange(created.value, false, created.label);
+          setInputValue(created.label);
+          setOpen(false);
+          return;
+        }
+      } finally {
+        setCreating(false);
+      }
+    }
+
+    onValueChange(`__new__:${normalized}`, true, normalized);
+    setInputValue(normalized);
+    setOpen(false);
+  };
+
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setOpen(true);
+      setHighlightIndex((current) => Math.min(current + 1, Math.max(listItems.length - 1, 0)));
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setOpen(true);
+      setHighlightIndex((current) => Math.max(current - 1, 0));
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const item = listItems[highlightIndex];
+      if (item?.type === "option") {
+        selectExisting(item.option);
+        return;
+      }
+      if (item?.type === "create") {
+        await selectNew(item.label);
+        return;
+      }
+      if (trimmedInput) {
+        await selectNew(trimmedInput);
+      }
+      return;
+    }
+
+    if (event.key === "Escape") {
+      setOpen(false);
+      setInputValue(displayValue);
+    }
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between font-normal", className)}
+    <div ref={containerRef} className={cn("relative", className)}>
+      <Input
+        ref={inputRef}
+        value={inputValue}
+        disabled={disabled || creating}
+        placeholder={placeholder}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        onFocus={() => setOpen(true)}
+        onChange={(event) => {
+          setInputValue(event.target.value);
+          setOpen(true);
+        }}
+        onKeyDown={handleKeyDown}
+        className="h-11"
+      />
+      {open && (
+        <div
+          id={listId}
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl border border-stone-200 bg-white p-1 shadow-lg"
         >
-          <span className="truncate">
-            {selected?.label ?? placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <div className="p-2">
-          <Input
-            placeholder={placeholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-9"
-          />
-        </div>
-        <div className="max-h-60 overflow-auto p-1">
-          {filtered.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleSelect(option.value)}
-              className={cn(
-                "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-stone-100",
-                value === option.value && "bg-tama-cyan/10"
-              )}
-            >
-              <Check
-                className={cn(
-                  "h-4 w-4",
-                  value === option.value ? "opacity-100" : "opacity-0"
-                )}
-              />
-              {option.label}
-            </button>
-          ))}
-          {showCreate && (
-            <button
-              type="button"
-              onClick={() =>
-                handleSelect(`__new__:${search.trim()}`, true, search.trim())
+          {listItems.length === 0 ? (
+            <p className="px-3 py-4 text-center text-sm text-stone-500">{emptyMessage}</p>
+          ) : (
+            listItems.map((item, index) => {
+              if (item.type === "option") {
+                const isSelected = item.option.value === value;
+                return (
+                  <button
+                    key={item.option.value}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectExisting(item.option)}
+                    className={cn(
+                      "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-stone-100",
+                      (highlightIndex === index || isSelected) && "bg-tama-cyan/10"
+                    )}
+                  >
+                    <Check
+                      className={cn("h-4 w-4 shrink-0", isSelected ? "opacity-100" : "opacity-0")}
+                    />
+                    {item.option.label}
+                  </button>
+                );
               }
-              className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-tama-cyan hover:bg-tama-cyan/10"
-            >
-              <Plus className="h-4 w-4" />
-              {createLabel(search.trim())}
-            </button>
-          )}
-          {filtered.length === 0 && !showCreate && (
-            <p className="px-2 py-4 text-center text-sm text-stone-500">
-              {emptyMessage}
-            </p>
+
+              return (
+                <button
+                  key={`create-${item.label}`}
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void selectNew(item.label)}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-tama-cyan hover:bg-tama-cyan/10",
+                    highlightIndex === index && "bg-tama-cyan/10"
+                  )}
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  {creating ? "Saving..." : createLabel(item.label)}
+                </button>
+              );
+            })
           )}
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 }

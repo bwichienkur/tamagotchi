@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
@@ -5,6 +6,7 @@ interface RemoteImageProps {
   src: string;
   alt: string;
   className?: string;
+  style?: CSSProperties;
   fill?: boolean;
   sizes?: string;
   priority?: boolean;
@@ -14,6 +16,7 @@ export function RemoteImage({
   src,
   alt,
   className,
+  style,
   fill,
   sizes,
   priority,
@@ -34,6 +37,7 @@ export function RemoteImage({
       sizes={sizes}
       priority={priority}
       className={cn(fill && "object-cover", className)}
+      style={style}
       unoptimized={needsUnoptimized}
     />
   );
