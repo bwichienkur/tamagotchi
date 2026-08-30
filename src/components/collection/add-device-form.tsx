@@ -10,9 +10,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
-import { RemoteImage } from "@/components/ui/remote-image";
+import { PhotoFrameEditor } from "@/components/collection/photo-frame-editor";
+import { FramedImage } from "@/components/ui/framed-image";
 import { uploadImage } from "@/lib/upload-image";
 import { createDeviceModelOption } from "@/lib/create-device-model";
+import {
+  DEFAULT_PHOTO_FRAME,
+  buildPhotoFramesForSave,
+  getAdditionalPhotoFrame,
+  getPrimaryPhotoFrame,
+  type DevicePhotoFrames,
+  type PhotoFrame,
+} from "@/lib/photo-frame";
 import { cn } from "@/lib/utils";
 import { getConditionLabel } from "@/lib/condition-labels";
 
@@ -27,6 +36,8 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
   const [primaryPhoto, setPrimaryPhoto] = useState<string>();
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
+  const [photoFrames, setPhotoFrames] = useState<DevicePhotoFrames>({});
+  const [editingPhoto, setEditingPhoto] = useState<"primary" | number | null>(null);
   const [conditionBadge, setConditionBadge] = useState<"NONE" | "NIB" | "IOB">("NONE");
   const [nickname, setNickname] = useState("");
   const [showMoreInfo, setShowMoreInfo] = useState("");
@@ -74,24 +85,61 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     return created;
   };
 
+  const updatePrimaryFrame = (frame: PhotoFrame) => {
+    setPhotoFrames((current) => ({ ...current, primary: frame }));
+  };
+
+  const updateAdditionalFrame = (index: number, frame: PhotoFrame) => {
+    setPhotoFrames((current) => ({
+      ...current,
+      additional: {
+        ...(current.additional ?? {}),
+        [String(index)]: frame,
+      },
+    }));
+  };
+
+  const removePhotoFrameAtIndex = (index: number) => {
+    setPhotoFrames((current) => {
+      if (!current.additional) return current;
+      const nextAdditional = { ...current.additional };
+      delete nextAdditional[String(index)];
+      return { ...current, additional: nextAdditional };
+    });
+  };
+
   const uploadFile = async (file: File): Promise<string> => uploadImage(file);
 
   const handlePhotoUpload = async (files: FileList | null, isPrimary = true) => {
     if (!files?.length) return;
     setUploading(true);
     try {
+      let extraIndex = additionalPhotos.length;
       for (let i = 0; i < files.length; i++) {
         const url = await uploadFile(files[i]);
         if (isPrimary && i === 0) {
           setPrimaryPhoto(url);
+          setEditingPhoto("primary");
+          updatePrimaryFrame({ ...DEFAULT_PHOTO_FRAME });
         } else {
+          updateAdditionalFrame(extraIndex, { ...DEFAULT_PHOTO_FRAME });
           setAdditionalPhotos((prev) => [...prev, url]);
+          setEditingPhoto(extraIndex);
+          extraIndex++;
         }
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to upload image");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const removeAdditionalPhoto = (index: number) => {
+    setAdditionalPhotos((prev) => prev.filter((_, i) => i !== index));
+    removePhotoFrameAtIndex(index);
+    if (editingPhoto === index) {
+      setEditingPhoto(primaryPhoto ? "primary" : null);
     }
   };
 
@@ -104,6 +152,12 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
 
     setSaving(true);
     try {
+      const framesToSave = buildPhotoFramesForSave(
+        primaryPhoto,
+        additionalPhotos,
+        photoFrames
+      );
+
       const res = await fetch("/api/collection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -113,6 +167,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
           newDeviceModelName,
           primaryPhoto,
           additionalPhotos,
+          photoFrames: framesToSave,
           conditionBadge,
           nickname: nickname || undefined,
           showMoreInfo: showMoreInfo || undefined,
@@ -145,7 +200,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
         <CardHeader>
           <CardTitle>Photo</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div
             className="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 bg-stone-50 transition-colors hover:border-tama-cyan/50"
             onDragOver={(e) => e.preventDefault()}
@@ -155,16 +210,20 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
             }}
           >
             {primaryPhoto ? (
-              <div className="relative h-48 w-48">
-                <RemoteImage src={primaryPhoto} alt="Device" fill />
-                <button
-                  type="button"
-                  onClick={() => setPrimaryPhoto(undefined)}
-                  className="absolute -right-2 -top-2 rounded-full bg-white p-1 shadow"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPhoto("primary")}
+                className={cn(
+                  "relative h-48 w-48 overflow-hidden rounded-2xl ring-2 transition-all",
+                  editingPhoto === "primary" ? "ring-tama-cyan" : "ring-transparent"
+                )}
+              >
+                <FramedImage
+                  src={primaryPhoto}
+                  alt="Device"
+                  frame={getPrimaryPhotoFrame(photoFrames)}
+                />
+              </button>
             ) : (
               <label className="flex cursor-pointer flex-col items-center gap-2 p-8">
                 <Upload className="h-8 w-8 text-stone-400" />
@@ -179,16 +238,89 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
                 />
               </label>
             )}
+            {primaryPhoto && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPrimaryPhoto(undefined);
+                  setPhotoFrames((current) => ({ ...current, primary: undefined }));
+                  setEditingPhoto(additionalPhotos.length > 0 ? 0 : null);
+                }}
+                className="absolute right-4 top-4 rounded-full bg-white p-1 shadow"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
           {uploading && <p className="mt-2 text-sm text-stone-500">Uploading...</p>}
-          {additionalPhotos.length > 0 && (
-            <div className="mt-4 flex gap-2">
+
+          {primaryPhoto && editingPhoto === "primary" && (
+            <PhotoFrameEditor
+              src={primaryPhoto}
+              alt="Primary device photo"
+              frame={getPrimaryPhotoFrame(photoFrames)}
+              onChange={updatePrimaryFrame}
+            />
+          )}
+
+          <div className="mt-4">
+            <Label className="mb-2 block text-sm text-stone-600">Additional photos</Label>
+            <div className="flex flex-wrap gap-2">
               {additionalPhotos.map((url, i) => (
-                <div key={i} className="relative h-16 w-16">
-                  <RemoteImage src={url} alt={`Additional photo ${i + 1}`} fill />
-                </div>
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setEditingPhoto(i)}
+                  className={cn(
+                    "relative h-16 w-16 overflow-hidden rounded-xl ring-2 transition-all",
+                    editingPhoto === i ? "ring-tama-cyan" : "ring-transparent"
+                  )}
+                >
+                  <FramedImage
+                    src={url}
+                    alt={`Additional photo ${i + 1}`}
+                    frame={getAdditionalPhotoFrame(photoFrames, i)}
+                  />
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      removeAdditionalPhoto(i);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        removeAdditionalPhoto(i);
+                      }
+                    }}
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-0.5 shadow"
+                  >
+                    <X className="h-3 w-3" />
+                  </span>
+                </button>
               ))}
+              <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-xl border border-dashed border-stone-200 text-stone-400 hover:border-tama-cyan/50">
+                <Upload className="h-5 w-5" />
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handlePhotoUpload(e.target.files, false)}
+                />
+              </label>
             </div>
+          </div>
+
+          {typeof editingPhoto === "number" && additionalPhotos[editingPhoto] && (
+            <PhotoFrameEditor
+              src={additionalPhotos[editingPhoto]}
+              alt={`Additional photo ${editingPhoto + 1}`}
+              frame={getAdditionalPhotoFrame(photoFrames, editingPhoto)}
+              onChange={(frame) => updateAdditionalFrame(editingPhoto, frame)}
+            />
           )}
         </CardContent>
       </Card>
