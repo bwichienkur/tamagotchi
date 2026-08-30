@@ -256,7 +256,7 @@ export function ShellsManager({ deviceModels }: ShellsManagerProps) {
       </p>
 
       {loading ? (
-        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-2">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="h-12 min-w-0 animate-pulse rounded-lg bg-stone-100" />
           ))}
@@ -266,7 +266,7 @@ export function ShellsManager({ deviceModels }: ShellsManagerProps) {
           {search || modelFilter ? "No shells match your filters." : "No shells yet."}
         </div>
       ) : (
-        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-2">
           {filtered.map((shell) => {
             const isEditing = editingId === shell.id;
             const inUse = shell._count.ownedDevices > 0 || shell._count.wishlistItems > 0;
@@ -274,7 +274,7 @@ export function ShellsManager({ deviceModels }: ShellsManagerProps) {
             return (
               <div
                 key={shell.id}
-                className="min-w-0 overflow-hidden rounded-lg border border-stone-200 bg-white px-3 py-2"
+                className="rounded-lg border border-stone-200 bg-white px-3 py-2"
               >
                 {isEditing ? (
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
@@ -325,8 +325,12 @@ export function ShellsManager({ deviceModels }: ShellsManagerProps) {
                 ) : (
                   <div className="flex min-w-0 items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-stone-900">{shell.name}</p>
-                      <p className="truncate text-xs text-stone-500">{shell.deviceModel.name}</p>
+                      <p className="break-words text-sm font-medium leading-snug text-stone-900">
+                        {shell.name}
+                      </p>
+                      <p className="break-words text-xs leading-snug text-stone-500">
+                        {shell.deviceModel.name}
+                      </p>
                       {inUse && (
                         <p className="mt-0.5 text-[10px] font-medium text-tama-cyan">
                           In use
