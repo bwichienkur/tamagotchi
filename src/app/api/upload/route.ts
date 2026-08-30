@@ -24,7 +24,7 @@ export async function GET() {
     blob: hasBlobStorage(),
     storageReady,
     modes: process.env.VERCEL
-      ? ["database", "blob-server"]
+      ? ["blob-server", "database"]
       : hasBlobStorage()
         ? ["blob-server", "database", "local"]
         : ["database", "local"],
