@@ -4,6 +4,7 @@ import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
 import { DeleteWikiButton } from "@/components/wiki/delete-wiki-button";
+import { DeviceShellGrid, DeviceShellItem } from "@/components/devices/device-shell-grid";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 
@@ -35,9 +36,10 @@ interface WikiPageViewProps {
   page: WikiPageData;
   ownedCount?: number;
   isAuthenticated?: boolean;
+  shells?: DeviceShellItem[];
 }
 
-export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPageViewProps) {
+export function WikiPageView({ page, ownedCount = 0, isAuthenticated, shells = [] }: WikiPageViewProps) {
   const sections = (page.sections as WikiSection[]) ?? [];
   const tocItems = extractTocFromSections(sections);
 
@@ -161,6 +163,10 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated }: WikiPage
           </div>
 
           <WikiSectionsContent sections={sections} className="mt-8 lg:mt-0" />
+
+          {page.deviceModel && shells.length > 0 && (
+            <DeviceShellGrid deviceSlug={page.deviceModel.slug} shells={shells} />
+          )}
 
           {page.children && page.children.length > 0 && (
             <div className="mt-10">

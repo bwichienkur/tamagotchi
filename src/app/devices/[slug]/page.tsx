@@ -4,6 +4,19 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
 import { WikiPageView } from "@/components/wiki/wiki-page-view";
+import { DeviceShellGrid } from "@/components/devices/device-shell-grid";
+
+async function getShellOwnedCounts(userId: string | undefined, deviceModelId: string) {
+  if (!userId) return {} as Record<string, number>;
+  const owned = await prisma.ownedDevice.groupBy({
+    by: ["shellId"],
+    where: { userId, deviceModelId, shellId: { not: null } },
+    _count: true,
+  });
+  return Object.fromEntries(
+    owned.filter((o) => o.shellId).map((o) => [o.shellId!, o._count])
+  );
+}
 
 export default async function DeviceModelPage({
   params,
@@ -40,6 +53,12 @@ export default async function DeviceModelPage({
         })
       : 0;
 
+    const shellOwnedCounts = await getShellOwnedCounts(session?.user?.id, device.id);
+    const shellsWithOwnership = device.shells.map((shell) => ({
+      ...shell,
+      ownedCount: shellOwnedCounts[shell.id] ?? 0,
+    }));
+
     if (wikiPage) {
       const fullPage = await prisma.wikiPage.findUnique({
         where: { id: wikiPage.id },
@@ -57,6 +76,7 @@ export default async function DeviceModelPage({
             page={fullPage}
             ownedCount={ownedCount}
             isAuthenticated={!!session?.user}
+            shells={shellsWithOwnership}
           />
         );
       }
@@ -81,18 +101,7 @@ export default async function DeviceModelPage({
           </div>
         )}
         <div className="mt-8">
-          <h2 className="text-xl font-semibold">Shells</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {device.shells.map((shell) => (
-              <Link
-                key={shell.id}
-                href={`/devices/${device.slug}/shells/${shell.slug}`}
-                className="rounded-xl border border-stone-200 p-4 hover:border-tama-cyan/30"
-              >
-                {shell.name}
-              </Link>
-            ))}
-          </div>
+          <DeviceShellGrid deviceSlug={device.slug} shells={shellsWithOwnership} />
         </div>
       </div>
     );
