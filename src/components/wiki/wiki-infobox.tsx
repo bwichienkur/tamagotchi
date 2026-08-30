@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { FramedImage } from "@/components/ui/framed-image";
 import { RemoteImage } from "@/components/ui/remote-image";
+import type { PhotoFrame } from "@/lib/photo-frame";
 
 export interface InfoboxField {
   group?: string;
@@ -13,6 +15,7 @@ interface WikiInfoboxProps {
   title?: string;
   image?: string | null;
   imageAlt?: string;
+  imageFrame?: PhotoFrame | null;
   fields: InfoboxField[];
   className?: string;
 }
@@ -21,6 +24,7 @@ export function WikiInfobox({
   title,
   image,
   imageAlt,
+  imageFrame,
   fields,
   className,
 }: WikiInfoboxProps) {
@@ -41,12 +45,21 @@ export function WikiInfobox({
       {image && (
         <div className="relative aspect-square bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-3">
           <div className="relative h-full w-full overflow-hidden rounded-2xl">
-          <RemoteImage
-            src={image}
-            alt={imageAlt ?? title ?? "Device image"}
-            fill
-            sizes="320px"
-          />
+            {imageFrame ? (
+              <FramedImage
+                src={image}
+                alt={imageAlt ?? title ?? "Device image"}
+                frame={imageFrame}
+                sizes="320px"
+              />
+            ) : (
+              <RemoteImage
+                src={image}
+                alt={imageAlt ?? title ?? "Device image"}
+                fill
+                sizes="320px"
+              />
+            )}
           </div>
         </div>
       )}

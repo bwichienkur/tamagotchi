@@ -1,5 +1,10 @@
 import { RemoteImage } from "@/components/ui/remote-image";
-import { photoFrameStyle, type PhotoFrame } from "@/lib/photo-frame";
+import {
+  normalizePhotoFrame,
+  photoFrameStyle,
+  photoFrameTransformStyle,
+  type PhotoFrame,
+} from "@/lib/photo-frame";
 import { cn } from "@/lib/utils";
 
 interface FramedImageProps {
@@ -21,15 +26,22 @@ export function FramedImage({
   sizes,
   priority,
 }: FramedImageProps) {
+  const normalized = normalizePhotoFrame(frame);
+
   return (
-    <RemoteImage
-      src={src}
-      alt={alt}
-      fill={fill}
-      sizes={sizes}
-      priority={priority}
-      className={cn("object-cover", className)}
-      style={photoFrameStyle(frame)}
-    />
+    <div className={cn(fill ? "absolute inset-0" : "relative h-full w-full", "overflow-hidden")}>
+      <div className="relative h-full w-full" style={photoFrameTransformStyle(normalized)}>
+        <RemoteImage
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          draggable={false}
+          className={cn("object-cover", className)}
+          style={photoFrameStyle(normalized)}
+        />
+      </div>
+    </div>
   );
 }

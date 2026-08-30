@@ -53,9 +53,44 @@ export function photoFrameStyle(frame?: PhotoFrame | null): CSSProperties {
   const normalized = normalizePhotoFrame(frame);
   return {
     objectPosition: `${normalized.x}% ${normalized.y}%`,
+  };
+}
+
+export function photoFrameTransformStyle(frame?: PhotoFrame | null): CSSProperties {
+  const normalized = normalizePhotoFrame(frame);
+  return {
     transform: `scale(${normalized.zoom})`,
     transformOrigin: `${normalized.x}% ${normalized.y}%`,
   };
+}
+
+export function buildPhotoFramesForSave(
+  primaryPhoto: string | null | undefined,
+  additionalPhotos: string[],
+  photoFrames: DevicePhotoFrames | null | undefined
+): DevicePhotoFrames | null {
+  if (!primaryPhoto && additionalPhotos.length === 0) {
+    return null;
+  }
+
+  const parsed = parsePhotoFrames(photoFrames);
+  const result: DevicePhotoFrames = {};
+
+  if (primaryPhoto) {
+    result.primary = normalizePhotoFrame(parsed.primary);
+  }
+
+  if (additionalPhotos.length > 0) {
+    const additional: Record<string, PhotoFrame> = {};
+    additionalPhotos.forEach((_, index) => {
+      additional[String(index)] = normalizePhotoFrame(
+        parsed.additional?.[String(index)]
+      );
+    });
+    result.additional = additional;
+  }
+
+  return result;
 }
 
 function clamp(value: number, min: number, max: number) {

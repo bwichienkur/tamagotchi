@@ -4,11 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RemoteImage } from "@/components/ui/remote-image";
+import { FramedImage } from "@/components/ui/framed-image";
 import {
   DEFAULT_PHOTO_FRAME,
   normalizePhotoFrame,
-  photoFrameStyle,
   type PhotoFrame,
 } from "@/lib/photo-frame";
 import { cn } from "@/lib/utils";
@@ -34,6 +33,7 @@ export function PhotoFrameEditor({
     startY: number;
     frameX: number;
     frameY: number;
+    frameZoom: number;
     pointerId: number;
   } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -55,6 +55,7 @@ export function PhotoFrameEditor({
       updateFrame({
         x: dragRef.current.frameX - deltaX,
         y: dragRef.current.frameY - deltaY,
+        zoom: dragRef.current.frameZoom,
       });
     },
     [updateFrame]
@@ -101,6 +102,7 @@ export function PhotoFrameEditor({
       startY: event.clientY,
       frameX: normalized.x,
       frameY: normalized.y,
+      frameZoom: normalized.zoom,
       pointerId: event.pointerId,
     };
     setDragging(true);
@@ -132,16 +134,9 @@ export function PhotoFrameEditor({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        <RemoteImage
-          src={src}
-          alt={alt}
-          fill
-          draggable={false}
-          className="pointer-events-none select-none"
-          style={photoFrameStyle(normalized)}
-        />
+        <FramedImage src={src} alt={alt} frame={normalized} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 to-transparent px-3 py-2 text-xs text-white">
-          Drag to reposition
+          Drag to reposition, then click Save Changes below
         </div>
       </div>
 

@@ -162,6 +162,7 @@ export default async function OwnedDevicePage({
               title="Details"
               image={device.primaryPhoto ?? device.shell?.primaryImage}
               imageAlt={device.deviceModel.name}
+              imageFrame={device.primaryPhoto ? primaryFrame : undefined}
               fields={infoboxFields}
             />
           </div>
@@ -229,6 +230,7 @@ export default async function OwnedDevicePage({
             title="Details"
             image={device.primaryPhoto ?? device.shell?.primaryImage ?? "/placeholder-device.svg"}
             imageAlt={device.deviceModel.name}
+            imageFrame={device.primaryPhoto ? primaryFrame : undefined}
             fields={infoboxFields}
           />
           {ownedCount > 1 && (
