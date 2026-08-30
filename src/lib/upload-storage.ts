@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getBlobReadWriteToken, hasBlobStorage } from "@/lib/blob-env";
 import { normalizeUploadedImageBuffer } from "@/lib/heic-convert-server";
 import { isHeicBuffer } from "@/lib/heic";
+import { ensureUserUploadTable, isMissingTableError } from "@/lib/ensure-upload-storage";
 
 export { getBlobReadWriteToken, hasBlobStorage };
 
@@ -99,6 +100,8 @@ async function saveToDatabase(
     throw new Error("Image must be 5 MB or smaller.");
   }
 
+  await ensureUserUploadTable();
+
   const upload = await prisma.userUpload.create({
     data: {
       userId,
@@ -112,10 +115,15 @@ async function saveToDatabase(
 }
 
 async function saveToBlob(buffer: Buffer, filename: string, mimeType: string): Promise<string> {
-  getBlobReadWriteToken();
+  const token = getBlobReadWriteToken();
+  if (!token) {
+    throw new Error("Blob storage is not configured.");
+  }
+
   const blob = await put(`uploads/${filename}`, buffer, {
     access: "public",
     contentType: mimeType,
+    token,
   });
   return blob.url;
 }
@@ -167,7 +175,16 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
   }
 
   if (process.env.VERCEL) {
-    return saveToDatabase(buffer, userId, filename, mimeType);
+    try {
+      return await saveToDatabase(buffer, userId, filename, mimeType);
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        throw new Error(
+          "Upload storage could not be initialized. Please try again in a moment."
+        );
+      }
+      throw error;
+    }
   }
 
   const uploadDir = path.join(process.cwd(), "public", "uploads");

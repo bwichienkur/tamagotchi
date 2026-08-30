@@ -47,9 +47,13 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (message.includes("userupload") || message.includes("does not exist")) {
+      if (
+        message.includes("upload storage") ||
+        message.includes("userupload") ||
+        message.includes("does not exist")
+      ) {
         return NextResponse.json(
-          { error: "Upload storage is not ready. Please try again after the site finishes deploying." },
+          { error: "Upload is temporarily unavailable. Please wait a moment and try again." },
           { status: 503 }
         );
       }
