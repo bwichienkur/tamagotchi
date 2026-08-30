@@ -8,6 +8,7 @@
     "vercel-build": "prisma generate && prisma migrate deploy && SKIP_TAMASHELL_IMPORT=true npm run db:seed && next build",
     "db:import-tamashell": "npx tsx -e \"import('./src/lib/importers/tamashell').then(m => new m.TamaShellImporter().importAll().then(console.log))\"",
     "db:restructure-tamashell": "npx tsx prisma/restructure-tamashell.ts",
+    "db:rename-licensed-nanos": "npx tsx prisma/rename-licensed-nanos.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

@@ -116,7 +116,7 @@ describe("parseShellSectionsFromHtml", () => {
     const sections = parseShellSectionsFromHtml(
       licensedHtml,
       "https://www.tamashell.com/licensed",
-      "Licensed Tamagotchi Nanos",
+      "Tamagotchi Nanos",
       "licensed"
     );
 

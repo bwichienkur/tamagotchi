@@ -15,8 +15,45 @@ import {
 export interface RestructureTamaShellResult {
   devicesCreated: number;
   devicesRenamed: number;
+  licensedRenamed: number;
   shellsMoved: number;
   devicesRemoved: number;
+}
+
+const LEGACY_LICENSED_NANO_PREFIX = /^Licensed Tamagotchi Nanos\b/i;
+
+/** Rename legacy "Licensed Tamagotchi Nanos …" device types to "Tamagotchi Nanos …". */
+export async function renameLicensedTamagotchiNanoDevices(): Promise<number> {
+  const models = await prisma.deviceModel.findMany({
+    where: {
+      OR: [
+        { name: { equals: "Licensed Tamagotchi Nanos", mode: "insensitive" } },
+        { name: { startsWith: "Licensed Tamagotchi Nanos ", mode: "insensitive" } },
+      ],
+    },
+  });
+
+  let renamed = 0;
+  for (const model of models) {
+    const newName = model.name.replace(LEGACY_LICENSED_NANO_PREFIX, "Tamagotchi Nanos").trim();
+    if (newName === model.name) continue;
+
+    let newSlug = createSlug(newName);
+    const conflict = await prisma.deviceModel.findFirst({
+      where: { slug: newSlug, NOT: { id: model.id } },
+    });
+    if (conflict) {
+      newSlug = createSlug(`${newName} ${model.id.slice(-6)}`);
+    }
+
+    await prisma.deviceModel.update({
+      where: { id: model.id },
+      data: { name: newName, slug: newSlug },
+    });
+    renamed++;
+  }
+
+  return renamed;
 }
 
 function sectionDeviceSlug(entry: TamaShellCatalogEntry, sectionLabel: string | null) {
@@ -114,9 +151,12 @@ export async function restructureTamaShellDevices(options?: {
   skipNetwork?: boolean;
 }): Promise<RestructureTamaShellResult> {
   if (options?.skipNetwork) {
+    const licensedRenamed = await renameLicensedTamagotchiNanoDevices();
+    revalidateDeviceCatalog();
     return {
       devicesCreated: 0,
       devicesRenamed: 0,
+      licensedRenamed,
       shellsMoved: 0,
       devicesRemoved: 0,
     };
@@ -126,6 +166,8 @@ export async function restructureTamaShellDevices(options?: {
   let devicesRenamed = 0;
   let shellsMoved = 0;
   let devicesRemoved = 0;
+
+  const licensedRenamed = await renameLicensedTamagotchiNanoDevices();
 
   for (const entry of TAMASHELL_CATALOG) {
     const familyRecord = await prisma.deviceFamily.findUnique({
@@ -202,6 +244,7 @@ export async function restructureTamaShellDevices(options?: {
   return {
     devicesCreated,
     devicesRenamed,
+    licensedRenamed,
     shellsMoved,
     devicesRemoved,
   };
