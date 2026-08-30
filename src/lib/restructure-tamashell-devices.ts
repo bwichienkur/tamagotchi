@@ -7,6 +7,10 @@ import {
   type TamaShellCatalogEntry,
 } from "@/lib/importers/tamashell/catalog";
 import {
+  importMissingTamaShellShells,
+  moveMatchingTamaShellShells,
+} from "@/lib/importers/tamashell/import-shells";
+import {
   buildSectionDeviceName,
   fetchTamaShellPage,
   parseShellSectionsFromHtml,
@@ -17,6 +21,7 @@ export interface RestructureTamaShellResult {
   devicesRenamed: number;
   licensedRenamed: number;
   shellsMoved: number;
+  shellsImported: number;
   devicesRemoved: number;
 }
 
@@ -85,10 +90,10 @@ async function ensureSectionDevice(
     where: { name: { equals: name, mode: "insensitive" }, familyId },
   });
   if (byName) {
-    if (byName.slug !== slug) {
+    if (byName.name !== name) {
       await prisma.deviceModel.update({
         where: { id: byName.id },
-        data: { slug, name },
+        data: { name },
       });
     }
     return { model: byName, renamed: byName.name !== name, created: false };
@@ -105,42 +110,26 @@ async function ensureSectionDevice(
   return { model, renamed: false, created: true };
 }
 
-async function moveShellsBySourceUrl(
-  fromModelId: string,
-  toModelId: string,
-  shellSourceUrls: Set<string>
-) {
-  if (fromModelId === toModelId) return 0;
+function legacyModelFilters(entry: TamaShellCatalogEntry, familyId: string) {
+  const slugFilters: Array<{ slug: string } | { slug: { startsWith: string } }> = [
+    { slug: entry.slug },
+    { slug: { startsWith: `${entry.slug}-` } },
+  ];
 
-  const shells = await prisma.shell.findMany({
-    where: { deviceModelId: fromModelId, sourceName: "TamaShell" },
-  });
-
-  let moved = 0;
-  for (const shell of shells) {
-    if (!shell.sourceUrl || !shellSourceUrls.has(shell.sourceUrl)) continue;
-
-    const conflict = await prisma.shell.findFirst({
-      where: {
-        deviceModelId: toModelId,
-        slug: shell.slug,
-        NOT: { id: shell.id },
-      },
-    });
-
-    if (conflict) {
-      await prisma.shell.delete({ where: { id: shell.id } });
-      continue;
-    }
-
-    await prisma.shell.update({
-      where: { id: shell.id },
-      data: { deviceModelId: toModelId },
-    });
-    moved++;
+  if (entry.slug === "licensed") {
+    slugFilters.push(
+      { slug: "tamagotchi-nanos" },
+      { slug: { startsWith: "tamagotchi-nanos-" } }
+    );
   }
 
-  return moved;
+  return {
+    familyId,
+    OR: [
+      ...slugFilters,
+      { name: { equals: entry.name, mode: "insensitive" as const } },
+    ],
+  };
 }
 
 /**
@@ -158,6 +147,7 @@ export async function restructureTamaShellDevices(options?: {
       devicesRenamed: 0,
       licensedRenamed,
       shellsMoved: 0,
+      shellsImported: 0,
       devicesRemoved: 0,
     };
   }
@@ -165,6 +155,7 @@ export async function restructureTamaShellDevices(options?: {
   let devicesCreated = 0;
   let devicesRenamed = 0;
   let shellsMoved = 0;
+  let shellsImported = 0;
   let devicesRemoved = 0;
 
   const licensedRenamed = await renameLicensedTamagotchiNanoDevices();
@@ -193,36 +184,24 @@ export async function restructureTamaShellDevices(options?: {
         if (renamed) devicesRenamed++;
         targetModelIds.add(model.id);
 
-        const sourceUrls = new Set(
-          section.shells.map((shell) => shell.sourceUrl).filter(Boolean) as string[]
-        );
-
         const legacyModels = await prisma.deviceModel.findMany({
-          where: {
-            OR: [
-              { slug: entry.slug },
-              { slug: { startsWith: `${entry.slug}-` } },
-              {
-                name: { equals: entry.name, mode: "insensitive" },
-                familyId: familyRecord.id,
-              },
-            ],
-          },
+          where: legacyModelFilters(entry, familyRecord.id),
         });
+        const legacyModelIds = legacyModels
+          .map((legacy) => legacy.id)
+          .filter((legacyId) => legacyId !== model.id);
 
-        for (const legacy of legacyModels) {
-          shellsMoved += await moveShellsBySourceUrl(legacy.id, model.id, sourceUrls);
-        }
+        shellsMoved += await moveMatchingTamaShellShells(
+          model.id,
+          section.shells,
+          legacyModelIds
+        );
+        shellsImported += await importMissingTamaShellShells(model.id, section.shells);
       }
 
       const legacyModels = await prisma.deviceModel.findMany({
         where: {
-          familyId: familyRecord.id,
-          OR: [
-            { slug: entry.slug },
-            { slug: { startsWith: `${entry.slug}-` } },
-            { name: { equals: entry.name, mode: "insensitive" } },
-          ],
+          ...legacyModelFilters(entry, familyRecord.id),
           NOT: { id: { in: [...targetModelIds] } },
         },
         include: { _count: { select: { shells: true, ownedDevices: true } } },
@@ -246,6 +225,7 @@ export async function restructureTamaShellDevices(options?: {
     devicesRenamed,
     licensedRenamed,
     shellsMoved,
+    shellsImported,
     devicesRemoved,
   };
 }
