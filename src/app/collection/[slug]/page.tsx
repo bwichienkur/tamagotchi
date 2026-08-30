@@ -8,9 +8,9 @@ import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
 import { ConditionBadge } from "@/components/collection/condition-badge";
+import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
 import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
 import { RemoteImage } from "@/components/ui/remote-image";
 
 export default async function OwnedDevicePage({
@@ -131,12 +131,7 @@ export default async function OwnedDevicePage({
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/collection/${device.slug}/edit`}>
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Link>
-          </Button>
+          <EditDeviceButton slug={device.slug} />
           <RemoveDeviceButton slug={device.slug} />
         </div>
       </div>
