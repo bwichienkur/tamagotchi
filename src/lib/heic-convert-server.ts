@@ -1,4 +1,3 @@
-import convert from "heic-convert";
 import { isHeicBuffer, isHeicFileMeta } from "@/lib/heic";
 
 function shouldConvertHeic(buffer: Buffer, file: File): boolean {
@@ -7,6 +6,7 @@ function shouldConvertHeic(buffer: Buffer, file: File): boolean {
 
 /** Convert HEIC/HEIF buffer to JPEG for storage and browser display. */
 export async function convertHeicToJpeg(buffer: Buffer): Promise<Buffer> {
+  const { default: convert } = await import("heic-convert");
   const output = await convert({
     buffer,
     format: "JPEG",
@@ -24,6 +24,11 @@ export async function normalizeUploadedImageBuffer(
     return null;
   }
 
-  const jpegBuffer = await convertHeicToJpeg(buffer);
-  return { buffer: Buffer.from(jpegBuffer), mimeType: "image/jpeg" };
+  try {
+    const jpegBuffer = await convertHeicToJpeg(buffer);
+    return { buffer: Buffer.from(jpegBuffer), mimeType: "image/jpeg" };
+  } catch (error) {
+    console.error("Server HEIC conversion failed:", error);
+    return null;
+  }
 }

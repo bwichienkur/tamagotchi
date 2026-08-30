@@ -37,6 +37,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url });
   } catch (error) {
     console.error("Upload failed:", error);
+
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      if (message.includes("body exceeded") || message.includes("too large")) {
+        return NextResponse.json(
+          { error: "Image is too large. The app compresses photos automatically — please try again." },
+          { status: 413 }
+        );
+      }
+
+      if (message.includes("userupload") || message.includes("does not exist")) {
+        return NextResponse.json(
+          { error: "Upload storage is not ready. Please try again after the site finishes deploying." },
+          { status: 503 }
+        );
+      }
+    }
+
     const message = error instanceof Error ? error.message : "Upload failed";
     return NextResponse.json({ error: message }, { status: 400 });
   }
