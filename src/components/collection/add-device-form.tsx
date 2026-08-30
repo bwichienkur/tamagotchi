@@ -109,6 +109,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
       const res = await fetch("/api/collection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           deviceModelId,
           newDeviceModelName,

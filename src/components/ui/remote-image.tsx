@@ -19,6 +19,10 @@ export function RemoteImage({
   priority,
 }: RemoteImageProps) {
   const resolvedSrc = src || "/placeholder-device.svg";
+  const needsUnoptimized =
+    resolvedSrc.startsWith("http") ||
+    resolvedSrc.startsWith("/api/uploads/") ||
+    resolvedSrc.startsWith("/uploads/");
 
   return (
     <Image
@@ -28,7 +32,7 @@ export function RemoteImage({
       sizes={sizes}
       priority={priority}
       className={cn(fill && "object-cover", className)}
-      unoptimized={resolvedSrc.startsWith("http")}
+      unoptimized={needsUnoptimized}
     />
   );
 }

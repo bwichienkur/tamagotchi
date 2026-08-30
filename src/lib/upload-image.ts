@@ -1,36 +1,10 @@
 "use client";
 
 /**
- * Upload an image via the best available method:
- * - Vercel Blob client upload when configured (large files, direct to CDN)
- * - Server form upload with database fallback when Blob is not set up
+ * Upload an image via the server upload endpoint.
+ * Server handles Vercel Blob (when configured) with database fallback.
  */
 export async function uploadImage(file: File): Promise<string> {
-  let preferClientBlob = true;
-
-  try {
-    const configRes = await fetch("/api/upload", { credentials: "include" });
-    if (configRes.ok) {
-      const config = await configRes.json();
-      preferClientBlob = Boolean(config.blob);
-    }
-  } catch {
-    preferClientBlob = false;
-  }
-
-  if (preferClientBlob) {
-    try {
-      const { upload } = await import("@vercel/blob/client");
-      const blob = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-      return blob.url;
-    } catch (error) {
-      console.warn("Blob client upload failed, falling back to server upload:", error);
-    }
-  }
-
   const formData = new FormData();
   formData.append("file", file);
 
@@ -48,6 +22,10 @@ export async function uploadImage(file: File): Promise<string> {
 
   if (!res.ok) {
     throw new Error(typeof data.error === "string" ? data.error : "Upload failed");
+  }
+
+  if (typeof data.url !== "string" || !data.url) {
+    throw new Error("Upload succeeded but no image URL was returned.");
   }
 
   return data.url;

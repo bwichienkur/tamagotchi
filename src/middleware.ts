@@ -71,6 +71,8 @@ export const config = {
     "/wiki/:path*/edit",
     "/wiki/:path*/history/:path*",
     "/api/collection/:path*",
+    "/api/upload",
+    "/api/uploads",
     "/api/upload/:path*",
     "/api/uploads/:path*",
     "/api/wishlist/:path*",
