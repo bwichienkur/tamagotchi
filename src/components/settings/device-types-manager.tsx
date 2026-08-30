@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,8 +170,8 @@ export function DeviceTypesManager() {
   };
 
   return (
-    <div className="space-y-3">
-      <form onSubmit={handleAdd} className="flex gap-2">
+    <div className="min-w-0 space-y-3">
+      <form onSubmit={handleAdd} className="flex min-w-0 gap-2">
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
@@ -201,9 +201,9 @@ export function DeviceTypesManager() {
       </p>
 
       {loading ? (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-10 animate-pulse rounded-lg bg-stone-100" />
+            <div key={index} className="h-10 min-w-0 animate-pulse rounded-lg bg-stone-100" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -211,7 +211,7 @@ export function DeviceTypesManager() {
           {search ? "No device types match your search." : "No device types yet."}
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((type) => {
             const isEditing = editingId === type.id;
             const inUse =
@@ -222,15 +222,15 @@ export function DeviceTypesManager() {
             return (
               <div
                 key={type.id}
-                className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2"
+                className="min-w-0 overflow-hidden rounded-lg border border-stone-200 bg-white px-3 py-2"
               >
                 {isEditing ? (
-                  <>
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       value={editName}
                       onChange={(event) => setEditName(event.target.value)}
                       autoFocus
-                      className="h-8 min-w-0 flex-1"
+                      className="h-8 min-w-0 w-full sm:flex-1"
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
                           event.preventDefault();
@@ -239,27 +239,39 @@ export function DeviceTypesManager() {
                         if (event.key === "Escape") cancelEdit();
                       }}
                     />
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-8 px-2"
-                      onClick={() => void handleSaveEdit(type.id)}
-                      disabled={savingId === type.id}
-                    >
-                      {savingId === type.id ? "..." : "Save"}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-8 px-2"
-                      onClick={cancelEdit}
-                    >
-                      Cancel
-                    </Button>
-                  </>
+                    <div className="flex shrink-0 gap-2 self-end sm:self-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="h-8 px-2 sm:px-3"
+                        onClick={() => void handleSaveEdit(type.id)}
+                        disabled={savingId === type.id}
+                        aria-label="Save device type"
+                      >
+                        {savingId === type.id ? (
+                          "..."
+                        ) : (
+                          <>
+                            <Check className="h-3.5 w-3.5 sm:hidden" />
+                            <span className="hidden sm:inline">Save</span>
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 sm:px-3"
+                        onClick={cancelEdit}
+                        aria-label="Cancel editing"
+                      >
+                        <X className="h-3.5 w-3.5 sm:hidden" />
+                        <span className="hidden sm:inline">Cancel</span>
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <>
+                  <div className="flex min-w-0 items-center gap-2">
                     <p className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
                       {type.name}
                     </p>
@@ -296,7 +308,7 @@ export function DeviceTypesManager() {
                         {removingId === type.id ? "Removing..." : "Remove"}
                       </span>
                     </Button>
-                  </>
+                  </div>
                 )}
               </div>
             );
