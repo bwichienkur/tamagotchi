@@ -5,12 +5,14 @@ import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DEVICE_GENERATION_PRESETS } from "@/lib/device-generations";
 import { cn } from "@/lib/utils";
 
 interface DeviceTypeRecord {
   id: string;
   name: string;
   slug: string;
+  generation?: string | null;
   family: { id: string; name: string };
   _count: {
     ownedDevices: number;
@@ -34,10 +36,12 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newFamilyId, setNewFamilyId] = useState(families[0]?.id ?? "");
+  const [newGeneration, setNewGeneration] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editFamilyId, setEditFamilyId] = useState("");
+  const [editGeneration, setEditGeneration] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
@@ -66,6 +70,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
       (type) =>
         type.name.toLowerCase().includes(query) ||
         type.family.name.toLowerCase().includes(query) ||
+        type.generation?.toLowerCase().includes(query) ||
         type.slug.toLowerCase().includes(query)
     );
   }, [deviceTypes, search]);
@@ -81,7 +86,11 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, familyId: newFamilyId }),
+        body: JSON.stringify({
+          name,
+          familyId: newFamilyId,
+          generation: newGeneration.trim() || null,
+        }),
       });
 
       if (!res.ok) {
@@ -95,6 +104,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         return [...withoutDuplicate, created].sort((a, b) => a.name.localeCompare(b.name));
       });
       setNewName("");
+      setNewGeneration("");
       toast.success(created.name === name ? "Device type added" : "Device type already exists");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add device type");
@@ -107,12 +117,14 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
     setEditingId(type.id);
     setEditName(type.name);
     setEditFamilyId(type.family.id);
+    setEditGeneration(type.generation ?? "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
     setEditFamilyId("");
+    setEditGeneration("");
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -128,7 +140,11 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, familyId: editFamilyId }),
+        body: JSON.stringify({
+          name,
+          familyId: editFamilyId,
+          generation: editGeneration.trim() || null,
+        }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -184,7 +200,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
 
   return (
     <div className="min-w-0 space-y-3">
-      <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <select
           value={newFamilyId}
           onChange={(event) => setNewFamilyId(event.target.value)}
@@ -196,6 +212,13 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
             </option>
           ))}
         </select>
+        <Input
+          value={newGeneration}
+          onChange={(event) => setNewGeneration(event.target.value)}
+          placeholder="Series (e.g. Gen 1)"
+          list="device-generation-presets"
+          className="h-9"
+        />
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
@@ -212,6 +235,12 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
           {adding ? "Adding..." : "Add"}
         </Button>
       </form>
+
+      <datalist id="device-generation-presets">
+        {DEVICE_GENERATION_PRESETS.map((preset) => (
+          <option key={preset} value={preset} />
+        ))}
+      </datalist>
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
@@ -266,6 +295,13 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                         </option>
                       ))}
                     </select>
+                    <Input
+                      value={editGeneration}
+                      onChange={(event) => setEditGeneration(event.target.value)}
+                      placeholder="Series (e.g. Gen 1)"
+                      list="device-generation-presets"
+                      className="h-8 min-w-0 w-full"
+                    />
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       value={editName}
@@ -318,7 +354,10 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                       <p className="truncate text-sm font-medium text-stone-900">
                         {type.name}
                       </p>
-                      <p className="truncate text-xs text-stone-500">{type.family.name}</p>
+                      <p className="truncate text-xs text-stone-500">
+                        {type.family.name}
+                        {type.generation ? ` · ${type.generation}` : ""}
+                      </p>
                     </div>
                     <Button
                       type="button"

@@ -4,10 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
 import { resolveFamilyIdForCreate } from "@/lib/device-family";
+import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
 const createDeviceTypeSchema = z.object({
   name: z.string().trim().min(1).max(120),
   familyId: z.string().optional(),
+  generation: z.string().trim().max(120).optional().nullable(),
 });
 
 export async function GET() {
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
       name,
       slug,
       familyId: await resolveFamilyIdForCreate(parsed.data.familyId),
+      generation: parsed.data.generation || null,
     },
     include: {
       family: { select: { id: true, name: true } },
@@ -85,6 +88,8 @@ export async function POST(request: NextRequest) {
       },
     },
   });
+
+  revalidateDeviceCatalog();
 
   return NextResponse.json(created, { status: 201 });
 }

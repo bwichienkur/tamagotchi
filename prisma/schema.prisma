@@ -206,6 +206,7 @@ model OwnedDevice {
   purchaseDate     DateTime?
   purchasePrice    Float?
   purchaseCurrency String?         @default("USD")
+  estimatedValue   Float?
   purchasedFrom    String?
   serialNumber     String?
   workingStatus    WorkingStatus   @default(UNTESTED)

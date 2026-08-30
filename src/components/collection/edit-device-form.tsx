@@ -43,6 +43,7 @@ export interface EditDeviceInitialValues {
   showMoreInfo: string | null;
   purchaseDate: string | null;
   purchasePrice: number | null;
+  estimatedValue: number | null;
   purchaseCurrency: string | null;
   purchasedFrom: string | null;
   workingStatus: "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS";
@@ -94,6 +95,9 @@ export function EditDeviceForm({
   const [purchaseDate, setPurchaseDate] = useState(toDateInputValue(device.purchaseDate));
   const [purchasePrice, setPurchasePrice] = useState(
     device.purchasePrice != null ? String(device.purchasePrice) : ""
+  );
+  const [estimatedValue, setEstimatedValue] = useState(
+    device.estimatedValue != null ? String(device.estimatedValue) : ""
   );
   const [purchasedFrom, setPurchasedFrom] = useState(device.purchasedFrom ?? "");
   const [workingStatus, setWorkingStatus] = useState(device.workingStatus);
@@ -273,6 +277,7 @@ export function EditDeviceForm({
           showMoreInfo: showMoreInfo || null,
           purchaseDate: purchaseDate || null,
           purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
+          estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
           purchaseCurrency: device.purchaseCurrency ?? "USD",
           purchasedFrom: purchasedFrom || null,
           workingStatus,
@@ -557,7 +562,7 @@ export function EditDeviceForm({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="purchaseDate">Purchase Date</Label>
               <Input
@@ -575,6 +580,17 @@ export function EditDeviceForm({
                 step="0.01"
                 value={purchasePrice}
                 onChange={(e) => setPurchasePrice(e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="estimatedValue">Estimated Value</Label>
+              <Input
+                id="estimatedValue"
+                type="number"
+                step="0.01"
+                value={estimatedValue}
+                onChange={(e) => setEstimatedValue(e.target.value)}
                 placeholder="0.00"
               />
             </div>

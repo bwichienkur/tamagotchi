@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
+import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
 const updateShellSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -56,6 +57,8 @@ export async function PATCH(
     },
   });
 
+  revalidateDeviceCatalog();
+
   return NextResponse.json(updated);
 }
 
@@ -101,6 +104,8 @@ export async function DELETE(
   }
 
   await prisma.shell.delete({ where: { id } });
+
+  revalidateDeviceCatalog();
 
   return NextResponse.json({ ok: true });
 }

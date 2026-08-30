@@ -1,11 +1,17 @@
 import { normalizeName, createSlug } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
+import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
   type TamaShellCatalogEntry,
+  type TamaShellFamily,
 } from "./catalog";
-import { fetchTamaShellPage, parseShellsFromHtml } from "./scraper";
+import {
+  fetchTamaShellPage,
+  parseShellSectionsFromHtml,
+  parseShellsFromHtml,
+} from "./scraper";
 
 export interface TamaShellDevice {
   name: string;
@@ -124,25 +130,139 @@ export class TamaShellImporter {
     );
   }
 
-  private async resolveDeviceModel(entry: TamaShellCatalogEntry) {
-    const existing = await this.findPossibleDeviceMatch(entry.name);
-    if (existing) {
-      return prisma.deviceModel.findUniqueOrThrow({ where: { id: existing.id } });
-    }
-
-    const familySlug = FAMILY_SLUG_MAP[entry.family];
-    const family = await prisma.deviceFamily.findUnique({ where: { slug: familySlug } });
-    if (!family) {
+  private async findOrCreateDeviceModel(params: {
+    name: string;
+    family: TamaShellFamily;
+    generation?: string | null;
+    modelSlug?: string;
+  }) {
+    const { name, family, generation = null } = params;
+    const familySlug = FAMILY_SLUG_MAP[family];
+    const familyRecord = await prisma.deviceFamily.findUnique({ where: { slug: familySlug } });
+    if (!familyRecord) {
       throw new Error(`Device family not found: ${familySlug}`);
     }
 
+    if (params.modelSlug) {
+      const bySlug = await prisma.deviceModel.findUnique({ where: { slug: params.modelSlug } });
+      if (bySlug) {
+        if (generation && bySlug.generation !== generation) {
+          return prisma.deviceModel.update({
+            where: { id: bySlug.id },
+            data: { generation },
+          });
+        }
+        return bySlug;
+      }
+    }
+
+    if (generation) {
+      const byGeneration = await prisma.deviceModel.findFirst({
+        where: {
+          name: { equals: name, mode: "insensitive" },
+          generation,
+        },
+      });
+      if (byGeneration) return byGeneration;
+
+      const sameName = await prisma.deviceModel.findMany({
+        where: { name: { equals: name, mode: "insensitive" } },
+      });
+      if (sameName.length === 1 && !sameName[0].generation) {
+        return prisma.deviceModel.update({
+          where: { id: sameName[0].id },
+          data: { generation },
+        });
+      }
+    } else {
+      const match = await this.findPossibleDeviceMatch(name);
+      if (match) {
+        return prisma.deviceModel.findUniqueOrThrow({ where: { id: match.id } });
+      }
+    }
+
+    const slug = params.modelSlug ?? createSlug(generation ? `${name} ${generation}` : name);
+
     return prisma.deviceModel.create({
       data: {
-        name: entry.name,
-        slug: createSlug(entry.name),
-        familyId: family.id,
+        name,
+        slug,
+        familyId: familyRecord.id,
+        generation,
         manufacturer: "Bandai",
       },
+    });
+  }
+
+  private async importShellsForDevice(
+    deviceModelId: string,
+    scrapedShells: TamaShellShell[],
+    existingTamaShellCount: number
+  ): Promise<{ shells: number; skipped: number; heroImage: string | null }> {
+    let shells = 0;
+    let skipped = 0;
+    let heroImage: string | null = null;
+
+    if (
+      existingTamaShellCount > 0 &&
+      process.env.FORCE_TAMASHELL_RESCRAPE !== "true"
+    ) {
+      return { shells, skipped: existingTamaShellCount, heroImage };
+    }
+
+    const deviceModel = await prisma.deviceModel.findUniqueOrThrow({
+      where: { id: deviceModelId },
+    });
+    heroImage = deviceModel.heroImage;
+
+    for (const shell of scrapedShells) {
+      const normalized = this.normalizeShell(shell);
+      const existing = await this.findPossibleShellMatch(normalized.name, deviceModelId);
+      if (existing) {
+        if (!existing.primaryImage && normalized.imageUrl) {
+          await prisma.shell.update({
+            where: { id: existing.id },
+            data: { primaryImage: normalized.imageUrl, lastCheckedAt: new Date() },
+          });
+        }
+        skipped++;
+        continue;
+      }
+
+      await prisma.shell.create({
+        data: {
+          deviceModelId,
+          name: normalized.name,
+          slug: createSlug(normalized.name),
+          primaryImage: normalized.imageUrl,
+          sourceUrl: normalized.sourceUrl,
+          sourceName: "TamaShell",
+          importedAt: new Date(),
+          lastCheckedAt: new Date(),
+        },
+      });
+      shells++;
+      if (!heroImage && normalized.imageUrl) {
+        heroImage = normalized.imageUrl;
+      }
+    }
+
+    if (heroImage && heroImage !== deviceModel.heroImage) {
+      await prisma.deviceModel.update({
+        where: { id: deviceModelId },
+        data: { heroImage },
+      });
+    }
+
+    return { shells, skipped, heroImage };
+  }
+
+  private async resolveDeviceModel(entry: TamaShellCatalogEntry) {
+    return this.findOrCreateDeviceModel({
+      name: entry.name,
+      family: entry.family,
+      generation: entry.generation ?? null,
+      modelSlug: entry.generation ? createSlug(`${entry.slug} ${entry.generation}`) : undefined,
     });
   }
 
@@ -153,6 +273,36 @@ export class TamaShellImporter {
 
     for (const entry of TAMASHELL_CATALOG) {
       try {
+        const pageUrl = `https://www.tamashell.com/${entry.slug}`;
+        await this.respectRateLimit();
+        const html = await fetchTamaShellPage(`/${entry.slug}`);
+        const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name);
+
+        if (sections) {
+          for (const section of sections) {
+            const deviceModel = await this.findOrCreateDeviceModel({
+              name: entry.name,
+              family: entry.family,
+              generation: section.generation,
+              modelSlug: createSlug(`${entry.slug} ${section.generation}`),
+            });
+            devices++;
+
+            const existingTamaShellCount = await prisma.shell.count({
+              where: { deviceModelId: deviceModel.id, sourceName: "TamaShell" },
+            });
+
+            const result = await this.importShellsForDevice(
+              deviceModel.id,
+              section.shells,
+              existingTamaShellCount
+            );
+            shells += result.shells;
+            skipped += result.skipped;
+          }
+          continue;
+        }
+
         const deviceModel = await this.resolveDeviceModel(entry);
         devices++;
 
@@ -160,58 +310,19 @@ export class TamaShellImporter {
           where: { deviceModelId: deviceModel.id, sourceName: "TamaShell" },
         });
 
-        if (
-          existingTamaShellCount > 0 &&
-          process.env.FORCE_TAMASHELL_RESCRAPE !== "true"
-        ) {
-          skipped += existingTamaShellCount;
-          continue;
-        }
+        const scrapedShells = parseShellsFromHtml(html, pageUrl, entry.name);
+        const result = await this.importShellsForDevice(
+          deviceModel.id,
+          scrapedShells,
+          existingTamaShellCount
+        );
+        shells += result.shells;
+        skipped += result.skipped;
 
-        const scrapedShells = await this.getShells({
-          name: entry.name,
-          slug: entry.slug,
-          url: `https://www.tamashell.com/${entry.slug}`,
-          family: entry.family,
-        });
-
-        let heroImage: string | null = deviceModel.heroImage;
-        for (const shell of scrapedShells) {
-          const normalized = this.normalizeShell(shell);
-          const existing = await this.findPossibleShellMatch(normalized.name, deviceModel.id);
-          if (existing) {
-            if (!existing.primaryImage && normalized.imageUrl) {
-              await prisma.shell.update({
-                where: { id: existing.id },
-                data: { primaryImage: normalized.imageUrl, lastCheckedAt: new Date() },
-              });
-            }
-            skipped++;
-            continue;
-          }
-
-          await prisma.shell.create({
-            data: {
-              deviceModelId: deviceModel.id,
-              name: normalized.name,
-              slug: createSlug(normalized.name),
-              primaryImage: normalized.imageUrl,
-              sourceUrl: normalized.sourceUrl,
-              sourceName: "TamaShell",
-              importedAt: new Date(),
-              lastCheckedAt: new Date(),
-            },
-          });
-          shells++;
-          if (!heroImage && normalized.imageUrl) {
-            heroImage = normalized.imageUrl;
-          }
-        }
-
-        if (heroImage && heroImage !== deviceModel.heroImage) {
+        if (entry.generation && deviceModel.generation !== entry.generation) {
           await prisma.deviceModel.update({
             where: { id: deviceModel.id },
-            data: { heroImage },
+            data: { generation: entry.generation },
           });
         }
       } catch (error) {
@@ -226,6 +337,8 @@ export class TamaShellImporter {
         details: { devices, shells, skipped },
       },
     });
+
+    revalidateDeviceCatalog();
 
     return { devices, shells, skipped };
   }
@@ -333,9 +446,18 @@ export class TamaShellImporter {
             name: selection.deviceName,
             slug: createSlug(selection.deviceName),
             familyId,
+            generation: catalogEntry?.generation ?? null,
           },
         });
         deviceModelId = model.id;
+      } else if (selection.deviceName) {
+        const catalogEntry = TAMASHELL_CATALOG.find((d) => d.name === selection.deviceName);
+        if (catalogEntry?.generation) {
+          await prisma.deviceModel.update({
+            where: { id: deviceModelId },
+            data: { generation: catalogEntry.generation },
+          });
+        }
       }
 
       for (const shell of selection.shells) {
@@ -371,6 +493,8 @@ export class TamaShellImporter {
         details: { imported, skipped },
       },
     });
+
+    revalidateDeviceCatalog();
 
     return { imported, skipped };
   }

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
+import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
 const createShellSchema = z.object({
   deviceModelId: z.string().min(1),
@@ -84,6 +85,8 @@ export async function POST(request: NextRequest) {
       _count: { select: { ownedDevices: true, wishlistItems: true } },
     },
   });
+
+  revalidateDeviceCatalog();
 
   return NextResponse.json(created, { status: 201 });
 }

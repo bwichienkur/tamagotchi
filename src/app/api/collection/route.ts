@@ -11,6 +11,7 @@ const createOwnedDeviceSchema = z.object({
   deviceModelId: z.string().optional(),
   newDeviceModelName: z.string().optional(),
   familyId: z.string().optional(),
+  generation: z.string().trim().max(120).optional().nullable(),
   shellId: z.string().optional(),
   newShellName: z.string().optional(),
   nickname: z.string().optional(),
@@ -41,6 +42,7 @@ const createOwnedDeviceSchema = z.object({
   showMoreInfo: z.string().optional(),
   purchaseDate: z.string().optional(),
   purchasePrice: z.number().optional(),
+  estimatedValue: z.number().optional().nullable(),
   purchaseCurrency: z.string().optional(),
   purchasedFrom: z.string().optional(),
   serialNumber: z.string().optional(),
@@ -82,6 +84,7 @@ export async function POST(request: NextRequest) {
     const resolved = await resolveDeviceModelId({
       newDeviceModelName: data.newDeviceModelName,
       familyId: data.familyId,
+      generation: data.generation,
     });
     if (resolved) {
       deviceModelId = resolved;
@@ -140,6 +143,7 @@ export async function POST(request: NextRequest) {
       showMoreInfo: data.showMoreInfo,
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,
       purchasePrice: data.purchasePrice,
+      estimatedValue: data.estimatedValue ?? undefined,
       purchaseCurrency: data.purchaseCurrency ?? "USD",
       purchasedFrom: data.purchasedFrom,
       serialNumber: data.serialNumber,
