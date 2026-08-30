@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { getAuthSecret } from "@/lib/auth-secret";
+import { authConfig } from "@/lib/auth.config";
 import { DEMO_EMAIL, ensureDemoUser } from "@/lib/demo-user";
 
 function authSecret() {
@@ -11,12 +12,7 @@ function authSecret() {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  trustHost: true,
-  secret: authSecret(),
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-  },
+  ...authConfig,
   providers: [
     Credentials({
       name: "credentials",
@@ -61,6 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user?.id) {
         token.id = user.id;
@@ -74,15 +71,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.error("Auth jwt callback error:", error);
           token.role = "user";
         }
+        return token;
       }
+
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true },
+          });
+          if (!dbUser) {
+            delete token.id;
+            delete token.role;
+            return token;
+          }
+          token.role = dbUser.role;
+        } catch (error) {
+          console.error("Auth jwt refresh error:", error);
+        }
+      }
+
       return token;
-    },
-    async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
-        session.user.role = (token.role as string) ?? "user";
-      }
-      return session;
     },
   },
 });

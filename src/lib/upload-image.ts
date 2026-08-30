@@ -11,6 +11,10 @@ async function parseUploadError(res: Response): Promise<string> {
     // not JSON
   }
 
+  if (res.status === 401) {
+    return "Please sign in to upload images.";
+  }
+
   if (res.status === 413) {
     return "Image is too large for upload. Try a smaller photo.";
   }
@@ -56,10 +60,6 @@ export async function uploadImage(file: File): Promise<string> {
   if (res.status === 503) {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     res = await postUpload(prepared);
-  }
-
-  if (res.status === 401) {
-    throw new Error("Please sign in to upload images.");
   }
 
   if (!res.ok) {
