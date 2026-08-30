@@ -236,7 +236,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
       </p>
 
       {loading ? (
-        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-2">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="h-10 min-w-0 animate-pulse rounded-lg bg-stone-100" />
           ))}
@@ -246,7 +246,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
           {search ? "No device types match your search." : "No device types yet."}
         </div>
       ) : (
-        <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-2">
           {filtered.map((type) => {
             const isEditing = editingId === type.id;
             const inUse =
@@ -257,7 +257,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
             return (
               <div
                 key={type.id}
-                className="min-w-0 overflow-hidden rounded-lg border border-stone-200 bg-white px-3 py-2"
+                className="rounded-lg border border-stone-200 bg-white px-3 py-2"
               >
                 {isEditing ? (
                   <div className="flex min-w-0 flex-col gap-2">
@@ -319,12 +319,14 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex items-start gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-stone-900">
+                      <p className="break-words text-sm font-medium leading-snug text-stone-900">
                         {type.name}
                       </p>
-                      <p className="truncate text-xs text-stone-500">{type.family.name}</p>
+                      <p className="break-words text-xs leading-snug text-stone-500">
+                        {type.family.name}
+                      </p>
                     </div>
                     <Button
                       type="button"
