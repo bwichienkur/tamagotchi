@@ -10,6 +10,7 @@ interface RemoteImageProps {
   fill?: boolean;
   sizes?: string;
   priority?: boolean;
+  draggable?: boolean;
 }
 
 export function RemoteImage({
@@ -20,6 +21,7 @@ export function RemoteImage({
   fill,
   sizes,
   priority,
+  draggable,
 }: RemoteImageProps) {
   const resolvedSrc = src || "/placeholder-device.svg";
   const needsUnoptimized =
@@ -38,6 +40,7 @@ export function RemoteImage({
       priority={priority}
       className={cn(fill && "object-cover", className)}
       style={style}
+      draggable={draggable}
       unoptimized={needsUnoptimized}
     />
   );
