@@ -69,7 +69,6 @@ export default async function EditDevicePage({
           purchasePrice: device.purchasePrice,
           purchaseCurrency: device.purchaseCurrency,
           purchasedFrom: device.purchasedFrom,
-          serialNumber: device.serialNumber,
           workingStatus: device.workingStatus,
           favorite: device.favorite,
           currentlyRunning: device.currentlyRunning,

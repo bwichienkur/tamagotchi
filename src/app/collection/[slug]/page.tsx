@@ -71,8 +71,7 @@ export default async function OwnedDevicePage({
       title: "Purchase Information",
       content: `<p>Purchased: ${formatDate(device.purchaseDate)}</p>
         <p>Price: ${formatCurrency(device.purchasePrice, device.purchaseCurrency ?? "USD")}</p>
-        ${device.purchasedFrom ? `<p>From: ${device.purchasedFrom}</p>` : ""}
-        ${device.serialNumber ? `<p>Serial: ${device.serialNumber}</p>` : ""}`,
+        ${device.purchasedFrom ? `<p>From: ${device.purchasedFrom}</p>` : ""}`,
     },
     {
       id: "notes",
@@ -98,7 +97,6 @@ export default async function OwnedDevicePage({
       ? [{ label: "Condition", value: getConditionLabel(device.conditionBadge) }]
       : []),
     { label: "Purchased", value: formatDate(device.purchaseDate) },
-    { label: "Region", value: device.shell?.region ?? "—" },
     { label: "Working", value: device.workingStatus.replace("_", " ") },
     { label: "Currently Running", value: device.currentlyRunning ? "Yes" : "No" },
   ];

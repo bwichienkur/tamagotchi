@@ -58,8 +58,9 @@ export function AddDeviceForm({
   const [purchaseDate, setPurchaseDate] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [purchasedFrom, setPurchasedFrom] = useState("");
-  const [serialNumber, setSerialNumber] = useState("");
-  const [workingStatus, setWorkingStatus] = useState("UNTESTED");
+  const [workingStatus, setWorkingStatus] = useState<
+    "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS"
+  >("UNTESTED");
   const [favorite, setFavorite] = useState(false);
   const [currentlyRunning, setCurrentlyRunning] = useState(false);
   const [notes, setNotes] = useState("");
@@ -238,7 +239,6 @@ export function AddDeviceForm({
           purchaseDate: purchaseDate || undefined,
           purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
           purchasedFrom: purchasedFrom || undefined,
-          serialNumber: serialNumber || undefined,
           workingStatus,
           favorite,
           currentlyRunning,
@@ -530,12 +530,22 @@ export function AddDeviceForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="serialNumber">Serial / Reference Number</Label>
-            <Input
-              id="serialNumber"
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-            />
+            <Label htmlFor="workingStatus">Working status</Label>
+            <select
+              id="workingStatus"
+              value={workingStatus}
+              onChange={(e) =>
+                setWorkingStatus(
+                  e.target.value as "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS"
+                )
+              }
+              className="h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm"
+            >
+              <option value="WORKING">Working</option>
+              <option value="NOT_WORKING">Not working</option>
+              <option value="UNTESTED">Untested</option>
+              <option value="FOR_PARTS">For parts</option>
+            </select>
           </div>
 
           <div className="flex flex-wrap gap-4">

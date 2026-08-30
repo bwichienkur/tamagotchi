@@ -45,7 +45,6 @@ export interface EditDeviceInitialValues {
   purchasePrice: number | null;
   purchaseCurrency: string | null;
   purchasedFrom: string | null;
-  serialNumber: string | null;
   workingStatus: "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS";
   favorite: boolean;
   currentlyRunning: boolean;
@@ -97,7 +96,6 @@ export function EditDeviceForm({
     device.purchasePrice != null ? String(device.purchasePrice) : ""
   );
   const [purchasedFrom, setPurchasedFrom] = useState(device.purchasedFrom ?? "");
-  const [serialNumber, setSerialNumber] = useState(device.serialNumber ?? "");
   const [workingStatus, setWorkingStatus] = useState(device.workingStatus);
   const [favorite, setFavorite] = useState(device.favorite);
   const [currentlyRunning, setCurrentlyRunning] = useState(device.currentlyRunning);
@@ -277,7 +275,6 @@ export function EditDeviceForm({
           purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
           purchaseCurrency: device.purchaseCurrency ?? "USD",
           purchasedFrom: purchasedFrom || null,
-          serialNumber: serialNumber || null,
           workingStatus,
           favorite,
           currentlyRunning,
@@ -589,15 +586,6 @@ export function EditDeviceForm({
               id="purchasedFrom"
               value={purchasedFrom}
               onChange={(e) => setPurchasedFrom(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serialNumber">Serial / Reference Number</Label>
-            <Input
-              id="serialNumber"
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
             />
           </div>
 
