@@ -28,10 +28,8 @@ export default async function SettingsPage() {
           <CardTitle>Device Types</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-5 text-sm text-stone-500">
+          <p className="mb-4 text-sm text-stone-500">
             Add, rename, or remove device types used when building your collection.
-            Types in use by collection items, shells, or wiki pages cannot be removed until
-            those links are cleared.
           </p>
           <DeviceTypesManager />
         </CardContent>

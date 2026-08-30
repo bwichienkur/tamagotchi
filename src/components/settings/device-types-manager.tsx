@@ -170,17 +170,17 @@ export function DeviceTypesManager() {
   };
 
   return (
-    <div className="space-y-5">
-      <form onSubmit={handleAdd} className="flex flex-col gap-3 sm:flex-row">
+    <div className="space-y-3">
+      <form onSubmit={handleAdd} className="flex gap-2">
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
-          placeholder="Add a new device type..."
-          className="h-11 flex-1"
+          placeholder="Add device type..."
+          className="h-9 flex-1"
         />
-        <Button type="submit" disabled={adding || !newName.trim()} className="shrink-0">
+        <Button type="submit" size="sm" disabled={adding || !newName.trim()} className="shrink-0">
           <Plus className="h-4 w-4" />
-          {adding ? "Adding..." : "Add Type"}
+          {adding ? "Adding..." : "Add"}
         </Button>
       </form>
 
@@ -190,31 +190,28 @@ export function DeviceTypesManager() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search device types..."
-          className="h-11 pl-10"
+          className="h-9 pl-9"
         />
       </div>
 
-      <p className="text-sm text-stone-500">
+      <p className="text-xs text-stone-500">
         {loading
           ? "Loading device types..."
           : `${filtered.length} of ${deviceTypes.length} device type${deviceTypes.length === 1 ? "" : "s"}`}
       </p>
 
       {loading ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="cute-card h-32 animate-pulse bg-stone-100/80" />
+            <div key={index} className="h-10 animate-pulse rounded-lg bg-stone-100" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="cute-card rounded-2xl border-2 border-dashed border-stone-200 px-4 py-10 text-center">
-          <p className="font-medium text-stone-700">No device types found</p>
-          <p className="mt-1 text-sm text-stone-500">
-            {search ? "Try a different search term." : "Add your first device type above."}
-          </p>
+        <div className="rounded-xl border border-dashed border-stone-200 px-4 py-8 text-center text-sm text-stone-500">
+          {search ? "No device types match your search." : "No device types yet."}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((type) => {
             const isEditing = editingId === type.id;
             const inUse =
@@ -223,13 +220,17 @@ export function DeviceTypesManager() {
               type._count.wikiPages > 0;
 
             return (
-              <div key={type.id} className="cute-card flex h-full flex-col p-4">
+              <div
+                key={type.id}
+                className="flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2"
+              >
                 {isEditing ? (
-                  <div className="space-y-3">
+                  <>
                     <Input
                       value={editName}
                       onChange={(event) => setEditName(event.target.value)}
                       autoFocus
+                      className="h-8 min-w-0 flex-1"
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
                           event.preventDefault();
@@ -238,77 +239,63 @@ export function DeviceTypesManager() {
                         if (event.key === "Escape") cancelEdit();
                       }}
                     />
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => void handleSaveEdit(type.id)}
-                        disabled={savingId === type.id}
-                      >
-                        {savingId === type.id ? "Saving..." : "Save"}
-                      </Button>
-                      <Button type="button" size="sm" variant="outline" onClick={cancelEdit}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 px-2"
+                      onClick={() => void handleSaveEdit(type.id)}
+                      disabled={savingId === type.id}
+                    >
+                      {savingId === type.id ? "..." : "Save"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 px-2"
+                      onClick={cancelEdit}
+                    >
+                      Cancel
+                    </Button>
+                  </>
                 ) : (
                   <>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate font-semibold text-stone-900">{type.name}</h3>
-                      <p className="mt-1 text-xs text-stone-500">{type.family.name}</p>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-1",
-                            type._count.ownedDevices > 0
-                              ? "bg-tama-cyan/10 text-tama-cyan"
-                              : "bg-stone-100 text-stone-500"
-                          )}
-                        >
-                          {type._count.ownedDevices} in collection
-                        </span>
-                        <span className="rounded-full bg-stone-100 px-2 py-1 text-stone-500">
-                          {type._count.shells} shells
-                        </span>
-                        {type._count.wikiPages > 0 && (
-                          <span className="rounded-full bg-stone-100 px-2 py-1 text-stone-500">
-                            {type._count.wikiPages} wiki
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex gap-2 border-t border-stone-100 pt-3">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startEdit(type)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={removingId === type.id}
-                        onClick={() => void handleRemove(type)}
-                        className={cn(
-                          !inUse && "text-red-600 hover:text-red-700",
-                          inUse && "opacity-70"
-                        )}
-                        title={
-                          inUse
-                            ? "Remove collection items, shells, and wiki pages before deleting"
-                            : "Remove device type"
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
+                    <p className="min-w-0 flex-1 truncate text-sm font-medium text-stone-900">
+                      {type.name}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 shrink-0 px-2"
+                      onClick={() => startEdit(type)}
+                      aria-label={`Edit ${type.name}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className={cn(
+                        "h-8 shrink-0 px-2",
+                        !inUse && "text-red-600 hover:text-red-700"
+                      )}
+                      disabled={removingId === type.id}
+                      onClick={() => void handleRemove(type)}
+                      aria-label={`Remove ${type.name}`}
+                      title={
+                        inUse
+                          ? "Remove collection items, shells, and wiki pages before deleting"
+                          : "Remove device type"
+                      }
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span className="sr-only">
                         {removingId === type.id ? "Removing..." : "Remove"}
-                      </Button>
-                    </div>
+                      </span>
+                    </Button>
                   </>
                 )}
               </div>
