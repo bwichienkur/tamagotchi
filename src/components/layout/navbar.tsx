@@ -11,11 +11,11 @@ import {
   Settings,
   Menu,
 } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import { GlobalSearch } from "@/components/search/global-search";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { signOut } from "next-auth/react";
 import { APP_NAME } from "@/lib/app-name";
 import { AppLogo } from "@/components/ui/app-logo";
 
@@ -26,19 +26,17 @@ const NAV_ITEMS = [
   { href: "/wiki", label: "Wiki", icon: BookOpen },
 ];
 
-interface NavbarProps {
-  user?: { name?: string | null; email?: string | null; image?: string | null };
-}
-
-export function Navbar({ user }: NavbarProps) {
+export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: session } = useSession();
+  const user = session?.user;
 
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-white/60 bg-cream/80 shadow-sm shadow-tama-cyan/5 backdrop-blur-md">
         <div className="mx-auto max-w-7xl">
-          <div className="flex h-14 items-center gap-2 px-3 sm:h-16 sm:gap-4 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 sm:gap-4 sm:px-6 sm:py-0 sm:h-16">
             <Link href="/" className="relative z-10 flex shrink-0 items-center gap-2.5">
               <AppLogo size="sm" />
               <span className="font-display hidden text-lg font-extrabold text-stone-800 sm:inline">
@@ -63,7 +61,7 @@ export function Navbar({ user }: NavbarProps) {
               ))}
             </nav>
 
-            <div className="relative z-10 hidden min-w-0 flex-1 px-2 md:block">
+            <div className="relative z-10 order-last w-full min-w-0 md:order-none md:flex-1 md:px-2">
               <GlobalSearch />
             </div>
 
@@ -113,10 +111,6 @@ export function Navbar({ user }: NavbarProps) {
                 <Menu className="h-5 w-5" />
               </Button>
             </div>
-          </div>
-
-          <div className="border-t border-stone-100 px-3 pb-3 pt-2 md:hidden">
-            <GlobalSearch />
           </div>
         </div>
 

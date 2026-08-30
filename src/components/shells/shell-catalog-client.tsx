@@ -35,10 +35,11 @@ interface ShellCatalogClientProps {
 }
 
 export function ShellCatalogClient({
-  shells,
+  shells: initialShells,
   families,
   deviceModels,
 }: ShellCatalogClientProps) {
+  const [shells, setShells] = useState(initialShells);
   const [search, setSearch] = useState("");
   const [familyFilter, setFamilyFilter] = useState("");
   const [modelFilter, setModelFilter] = useState("");
@@ -70,12 +71,24 @@ export function ShellCatalogClient({
   }, [shells, search, familyFilter, modelFilter, regionFilter, yearFilter, ownedFilter]);
 
   const toggleWishlist = async (shellId: string) => {
-    await fetch("/api/wishlist", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shellId }),
-    });
-    window.location.reload();
+    setShells((prev) =>
+      prev.map((shell) =>
+        shell.id === shellId ? { ...shell, wishlisted: !shell.wishlisted } : shell
+      )
+    );
+    try {
+      await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shellId }),
+      });
+    } catch {
+      setShells((prev) =>
+        prev.map((shell) =>
+          shell.id === shellId ? { ...shell, wishlisted: !shell.wishlisted } : shell
+        )
+      );
+    }
   };
 
   return (
