@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "vercel-build": "prisma generate && prisma migrate deploy && SKIP_TAMASHELL_IMPORT=true npm run db:seed && next build",
     "db:import-tamashell": "npx tsx -e \"import('./src/lib/importers/tamashell').then(m => new m.TamaShellImporter().importAll().then(console.log))\"",
+    "db:backfill-generations": "npx tsx prisma/backfill-generations.ts",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",

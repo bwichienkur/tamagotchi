@@ -5,6 +5,20 @@ import type { TamaShellShell } from "./index";
 const TAMASHELL_ORIGIN = "https://www.tamashell.com";
 const CONTENT_MARKER = "6617055158d1f12af2c75e0c";
 
+const INVALID_SECTION_LABELS = new Set([
+  "skip to content",
+  "tamashell",
+  "home",
+  "gallery",
+]);
+
+function isValidSectionAnchor(anchorId: string, generation: string): boolean {
+  if (!anchorId || !generation) return false;
+  if (INVALID_SECTION_LABELS.has(generation.toLowerCase())) return false;
+  if (generation.length < 2 || generation.length > 80) return false;
+  return /^gen/i.test(anchorId);
+}
+
 export interface TamaShellSection {
   generation: string;
   shells: TamaShellShell[];
@@ -79,6 +93,7 @@ function discoverSections($: CheerioAPI): Array<{ anchorId: string; generation: 
     const generation = $(el).text().replace(/\|/g, "").trim();
     if (!anchorId || !generation || seen.has(anchorId)) return;
     if (!$(`#${anchorId}`).length) return;
+    if (!isValidSectionAnchor(anchorId, generation)) return;
     seen.add(anchorId);
     sections.push({ anchorId, generation });
   });

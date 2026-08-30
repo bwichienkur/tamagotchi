@@ -12,6 +12,7 @@ const SAMPLE_HTML = `
 `;
 
 const SECTION_HTML = `
+  <a href="#skip">Skip to Content</a>
   <p>
     <a href="/original/#gen1">Gen 1</a> |
     <a href="/original/#gen1lmd">Gen 1 Limited Editions</a>
