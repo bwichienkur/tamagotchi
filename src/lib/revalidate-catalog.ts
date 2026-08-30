@@ -2,9 +2,14 @@ import { revalidatePath, revalidateTag } from "next/cache";
 
 /** Bust cached device catalog data after manage / API mutations. */
 export function revalidateDeviceCatalog() {
-  revalidateTag("device-catalog", "max");
-  revalidatePath("/devices");
-  revalidatePath("/collection");
+  try {
+    revalidateTag("device-catalog", "max");
+    revalidatePath("/devices");
+    revalidatePath("/collection");
   revalidatePath("/manage/device-types");
-  revalidatePath("/shells");
+  revalidatePath("/manage/series");
+  revalidatePath("/manage/shells");
+  } catch {
+    // No-op outside Next.js request context (CLI scripts, seeds, etc.)
+  }
 }

@@ -5,7 +5,6 @@ import { Check, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DEVICE_GENERATION_PRESETS } from "@/lib/device-generations";
 import { cn } from "@/lib/utils";
 
 interface DeviceTypeRecord {
@@ -13,6 +12,7 @@ interface DeviceTypeRecord {
   name: string;
   slug: string;
   generation?: string | null;
+  series?: { id: string; name: string } | null;
   family: { id: string; name: string };
   _count: {
     ownedDevices: number;
@@ -26,32 +26,45 @@ interface FamilyOption {
   name: string;
 }
 
+interface SeriesOption {
+  id: string;
+  name: string;
+  family: { id: string; name: string };
+}
+
 interface DeviceTypesManagerProps {
   families: FamilyOption[];
 }
 
 export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
   const [deviceTypes, setDeviceTypes] = useState<DeviceTypeRecord[]>([]);
+  const [seriesOptions, setSeriesOptions] = useState<SeriesOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newFamilyId, setNewFamilyId] = useState(families[0]?.id ?? "");
-  const [newGeneration, setNewGeneration] = useState("");
+  const [newSeriesId, setNewSeriesId] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editFamilyId, setEditFamilyId] = useState("");
-  const [editGeneration, setEditGeneration] = useState("");
+  const [editSeriesId, setEditSeriesId] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadDeviceTypes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/device-types", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to load device types");
-      const data = (await res.json()) as DeviceTypeRecord[];
+      const [typesRes, seriesRes] = await Promise.all([
+        fetch("/api/device-types", { credentials: "include" }),
+        fetch("/api/series", { credentials: "include" }),
+      ]);
+      if (!typesRes.ok) throw new Error("Failed to load device types");
+      const data = (await typesRes.json()) as DeviceTypeRecord[];
       setDeviceTypes(data);
+      if (seriesRes.ok) {
+        setSeriesOptions((await seriesRes.json()) as SeriesOption[]);
+      }
     } catch {
       toast.error("Failed to load device types");
     } finally {
@@ -75,6 +88,14 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
     );
   }, [deviceTypes, search]);
 
+  const seriesForFamily = useCallback(
+    (familyId: string) => seriesOptions.filter((series) => series.family.id === familyId),
+    [seriesOptions]
+  );
+
+  const seriesLabel = (type: DeviceTypeRecord) =>
+    type.series?.name ?? type.generation ?? null;
+
   const handleAdd = async (event: React.FormEvent) => {
     event.preventDefault();
     const name = newName.trim();
@@ -89,7 +110,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         body: JSON.stringify({
           name,
           familyId: newFamilyId,
-          generation: newGeneration.trim() || null,
+          seriesId: newSeriesId || null,
         }),
       });
 
@@ -104,7 +125,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         return [...withoutDuplicate, created].sort((a, b) => a.name.localeCompare(b.name));
       });
       setNewName("");
-      setNewGeneration("");
+      setNewSeriesId("");
       toast.success(created.name === name ? "Device type added" : "Device type already exists");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add device type");
@@ -117,14 +138,14 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
     setEditingId(type.id);
     setEditName(type.name);
     setEditFamilyId(type.family.id);
-    setEditGeneration(type.generation ?? "");
+    setEditSeriesId(type.series?.id ?? "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
     setEditFamilyId("");
-    setEditGeneration("");
+    setEditSeriesId("");
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -143,7 +164,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         body: JSON.stringify({
           name,
           familyId: editFamilyId,
-          generation: editGeneration.trim() || null,
+          seriesId: editSeriesId || null,
         }),
       });
 
@@ -203,7 +224,10 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
       <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
         <select
           value={newFamilyId}
-          onChange={(event) => setNewFamilyId(event.target.value)}
+          onChange={(event) => {
+            setNewFamilyId(event.target.value);
+            setNewSeriesId("");
+          }}
           className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-sm"
         >
           {families.map((family) => (
@@ -212,13 +236,18 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
             </option>
           ))}
         </select>
-        <Input
-          value={newGeneration}
-          onChange={(event) => setNewGeneration(event.target.value)}
-          placeholder="Series (e.g. Gen 1)"
-          list="device-generation-presets"
-          className="h-9"
-        />
+        <select
+          value={newSeriesId}
+          onChange={(event) => setNewSeriesId(event.target.value)}
+          className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-sm"
+        >
+          <option value="">No series</option>
+          {seriesForFamily(newFamilyId).map((series) => (
+            <option key={series.id} value={series.id}>
+              {series.name}
+            </option>
+          ))}
+        </select>
         <Input
           value={newName}
           onChange={(event) => setNewName(event.target.value)}
@@ -235,12 +264,6 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
           {adding ? "Adding..." : "Add"}
         </Button>
       </form>
-
-      <datalist id="device-generation-presets">
-        {DEVICE_GENERATION_PRESETS.map((preset) => (
-          <option key={preset} value={preset} />
-        ))}
-      </datalist>
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
@@ -286,7 +309,10 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                   <div className="flex min-w-0 flex-col gap-2">
                     <select
                       value={editFamilyId}
-                      onChange={(event) => setEditFamilyId(event.target.value)}
+                      onChange={(event) => {
+                        setEditFamilyId(event.target.value);
+                        setEditSeriesId("");
+                      }}
                       className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-sm"
                     >
                       {families.map((family) => (
@@ -295,13 +321,18 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                         </option>
                       ))}
                     </select>
-                    <Input
-                      value={editGeneration}
-                      onChange={(event) => setEditGeneration(event.target.value)}
-                      placeholder="Series (e.g. Gen 1)"
-                      list="device-generation-presets"
-                      className="h-8 min-w-0 w-full"
-                    />
+                    <select
+                      value={editSeriesId}
+                      onChange={(event) => setEditSeriesId(event.target.value)}
+                      className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-sm"
+                    >
+                      <option value="">No series</option>
+                      {seriesForFamily(editFamilyId).map((series) => (
+                        <option key={series.id} value={series.id}>
+                          {series.name}
+                        </option>
+                      ))}
+                    </select>
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <Input
                       value={editName}
@@ -356,7 +387,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                       </p>
                       <p className="truncate text-xs text-stone-500">
                         {type.family.name}
-                        {type.generation ? ` · ${type.generation}` : ""}
+                        {seriesLabel(type) ? ` · ${seriesLabel(type)}` : ""}
                       </p>
                     </div>
                     <Button

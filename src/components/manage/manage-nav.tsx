@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 const MANAGE_LINKS = [
   { href: "/manage", label: "Overview", exact: true },
   { href: "/manage/device-types", label: "Device Types" },
+  { href: "/manage/series", label: "Series" },
   { href: "/manage/shells", label: "Shells" },
 ];
 

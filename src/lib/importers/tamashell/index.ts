@@ -1,6 +1,7 @@
 import { normalizeName, createSlug } from "@/lib/slug";
 import { prisma } from "@/lib/prisma";
 import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
+import { findOrCreateDeviceSeries } from "@/lib/device-series-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
@@ -146,10 +147,11 @@ export class TamaShellImporter {
     if (params.modelSlug) {
       const bySlug = await prisma.deviceModel.findUnique({ where: { slug: params.modelSlug } });
       if (bySlug) {
-        if (generation && bySlug.generation !== generation) {
+        if (generation && (bySlug.generation !== generation || !bySlug.seriesId)) {
+          const series = await findOrCreateDeviceSeries(familyRecord.id, generation);
           return prisma.deviceModel.update({
             where: { id: bySlug.id },
-            data: { generation },
+            data: { generation, seriesId: series?.id ?? null },
           });
         }
         return bySlug;
@@ -163,15 +165,25 @@ export class TamaShellImporter {
           generation,
         },
       });
-      if (byGeneration) return byGeneration;
+      if (byGeneration) {
+        if (!byGeneration.seriesId) {
+          const series = await findOrCreateDeviceSeries(familyRecord.id, generation);
+          return prisma.deviceModel.update({
+            where: { id: byGeneration.id },
+            data: { seriesId: series?.id ?? null },
+          });
+        }
+        return byGeneration;
+      }
 
       const sameName = await prisma.deviceModel.findMany({
         where: { name: { equals: name, mode: "insensitive" } },
       });
       if (sameName.length === 1 && !sameName[0].generation) {
+        const series = await findOrCreateDeviceSeries(familyRecord.id, generation);
         return prisma.deviceModel.update({
           where: { id: sameName[0].id },
-          data: { generation },
+          data: { generation, seriesId: series?.id ?? null },
         });
       }
     } else {
@@ -182,6 +194,9 @@ export class TamaShellImporter {
     }
 
     const slug = params.modelSlug ?? createSlug(generation ? `${name} ${generation}` : name);
+    const series = generation
+      ? await findOrCreateDeviceSeries(familyRecord.id, generation)
+      : null;
 
     return prisma.deviceModel.create({
       data: {
@@ -189,6 +204,7 @@ export class TamaShellImporter {
         slug,
         familyId: familyRecord.id,
         generation,
+        seriesId: series?.id ?? null,
         manufacturer: "Bandai",
       },
     });
@@ -276,7 +292,7 @@ export class TamaShellImporter {
         const pageUrl = `https://www.tamashell.com/${entry.slug}`;
         await this.respectRateLimit();
         const html = await fetchTamaShellPage(`/${entry.slug}`);
-        const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name);
+        const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
 
         if (sections) {
           for (const section of sections) {
@@ -320,9 +336,10 @@ export class TamaShellImporter {
         skipped += result.skipped;
 
         if (entry.generation && deviceModel.generation !== entry.generation) {
+          const series = await findOrCreateDeviceSeries(deviceModel.familyId, entry.generation);
           await prisma.deviceModel.update({
             where: { id: deviceModel.id },
-            data: { generation: entry.generation },
+            data: { generation: entry.generation, seriesId: series?.id ?? null },
           });
         }
       } catch (error) {
