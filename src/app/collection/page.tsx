@@ -2,6 +2,7 @@ import { CollectionPageClient } from "@/components/collection/collection-page-cl
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { withDatabase } from "@/lib/db-query";
+import { getAllDeviceModels, getAllFamilies } from "@/lib/cached-data";
 
 export default async function CollectionPage() {
   const session = await requireAuth();
@@ -21,11 +22,8 @@ export default async function CollectionPage() {
       orderBy: { createdAt: "desc" },
     });
 
-    const families = await prisma.deviceFamily.findMany({ orderBy: { sortOrder: "asc" } });
-    const deviceModels = await prisma.deviceModel.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
+    const families = await getAllFamilies();
+    const deviceModels = await getAllDeviceModels();
 
     return { devices, families, deviceModels, collectionImage: user?.collectionImage };
   });

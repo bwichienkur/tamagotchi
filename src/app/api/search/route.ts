@@ -1,95 +1,110 @@
 import { NextRequest, NextResponse } from "next/server";
-import Fuse from "fuse.js";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q") ?? "";
+  const q = searchParams.get("q")?.trim() ?? "";
 
-  if (!q.trim()) {
+  if (!q) {
     return NextResponse.json({ devices: [], shells: [], collection: [], wiki: [] });
   }
 
   const session = await auth();
+  const userId = session?.user?.id;
 
   const [devices, shells, ownedDevices, wikiPages] = await Promise.all([
     prisma.deviceModel.findMany({
+      where: {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { generation: { contains: q, mode: "insensitive" } },
+        ],
+      },
       include: { family: true },
-      take: 100,
+      take: 5,
+      orderBy: { name: "asc" },
     }),
     prisma.shell.findMany({
+      where: {
+        OR: [
+          { name: { contains: q, mode: "insensitive" } },
+          { colorDescription: { contains: q, mode: "insensitive" } },
+        ],
+      },
       include: { deviceModel: true },
-      take: 200,
+      take: 5,
+      orderBy: { name: "asc" },
     }),
-    session?.user?.id
+    userId
       ? prisma.ownedDevice.findMany({
-          where: { userId: session.user.id },
+          where: {
+            userId,
+            OR: [
+              { nickname: { contains: q, mode: "insensitive" } },
+              { notes: { contains: q, mode: "insensitive" } },
+              { showMoreInfo: { contains: q, mode: "insensitive" } },
+              { customShellName: { contains: q, mode: "insensitive" } },
+              { deviceModel: { name: { contains: q, mode: "insensitive" } } },
+              { shell: { name: { contains: q, mode: "insensitive" } } },
+            ],
+          },
           include: { deviceModel: true, shell: true },
+          take: 5,
+          orderBy: { createdAt: "desc" },
         })
       : Promise.resolve([]),
-    prisma.wikiPage.findMany({ take: 100 }),
+    prisma.wikiPage.findMany({
+      where: {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { summary: { contains: q, mode: "insensitive" } },
+          { slug: { contains: q, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+      orderBy: { title: "asc" },
+    }),
   ]);
 
-  const deviceFuse = new Fuse(devices, {
-    keys: ["name", "alternateNames", "generation"],
-    threshold: 0.4,
-  });
-
-  const shellFuse = new Fuse(shells, {
-    keys: ["name", "alternateNames", "colorDescription"],
-    threshold: 0.4,
-  });
-
-  const collectionFuse = new Fuse(ownedDevices, {
-    keys: ["nickname", "notes", "showMoreInfo", "deviceModel.name", "shell.name", "customShellName"],
-    threshold: 0.4,
-  });
-
-  const wikiFuse = new Fuse(wikiPages, {
-    keys: ["title", "summary", "slug"],
-    threshold: 0.4,
-  });
-
-  const deviceResults = deviceFuse.search(q, { limit: 5 }).map((r) => ({
-    type: "device" as const,
-    id: r.item.id,
-    title: r.item.name,
-    subtitle: r.item.family?.name ?? undefined,
-    href: `/devices/${r.item.slug}`,
-    excerpt: r.item.description?.slice(0, 100),
-  }));
-
-  const shellResults = shellFuse.search(q, { limit: 5 }).map((r) => ({
-    type: "shell" as const,
-    id: r.item.id,
-    title: r.item.name,
-    subtitle: r.item.deviceModel.name,
-    href: `/devices/${r.item.deviceModel.slug}/shells/${r.item.slug}`,
-  }));
-
-  const collectionResults = collectionFuse.search(q, { limit: 5 }).map((r) => ({
-    type: "collection" as const,
-    id: r.item.id,
-    title: r.item.nickname ?? r.item.deviceModel.name,
-    subtitle: r.item.shell?.name ?? r.item.customShellName ?? undefined,
-    href: `/collection/${r.item.slug}`,
-    image: r.item.primaryPhoto,
-  }));
-
-  const wikiResults = wikiFuse.search(q, { limit: 5 }).map((r) => ({
-    type: "wiki" as const,
-    id: r.item.id,
-    title: r.item.title,
-    subtitle: "Wiki",
-    href: `/wiki/${r.item.slug}`,
-    excerpt: r.item.summary?.slice(0, 100),
-  }));
-
-  return NextResponse.json({
-    devices: deviceResults,
-    shells: shellResults,
-    collection: collectionResults,
-    wiki: wikiResults,
-  });
+  return NextResponse.json(
+    {
+      devices: devices.map((item) => ({
+        type: "device" as const,
+        id: item.id,
+        title: item.name,
+        subtitle: item.family?.name ?? undefined,
+        href: `/devices/${item.slug}`,
+        excerpt: item.description?.slice(0, 100),
+      })),
+      shells: shells.map((item) => ({
+        type: "shell" as const,
+        id: item.id,
+        title: item.name,
+        subtitle: item.deviceModel.name,
+        href: `/devices/${item.deviceModel.slug}/shells/${item.slug}`,
+      })),
+      collection: ownedDevices.map((item) => ({
+        type: "collection" as const,
+        id: item.id,
+        title: item.nickname ?? item.deviceModel.name,
+        subtitle: item.shell?.name ?? item.customShellName ?? undefined,
+        href: `/collection/${item.slug}`,
+        image: item.primaryPhoto,
+      })),
+      wiki: wikiPages.map((item) => ({
+        type: "wiki" as const,
+        id: item.id,
+        title: item.title,
+        subtitle: "Wiki",
+        href: `/wiki/${item.slug}`,
+        excerpt: item.summary?.slice(0, 100),
+      })),
+    },
+    {
+      headers: {
+        "Cache-Control": userId ? "private, no-store" : "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    }
+  );
 }

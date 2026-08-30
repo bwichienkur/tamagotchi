@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Heart } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { ConditionBadge } from "@/components/collection/condition-badge";
 import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
 import { RemoteImage } from "@/components/ui/remote-image";
@@ -26,7 +26,10 @@ interface CollectionCardProps {
   view?: "grid" | "list";
 }
 
-export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
+export const CollectionCard = memo(function CollectionCard({
+  device,
+  view = "grid",
+}: CollectionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const shellName = device.shell?.name ?? device.customShellName ?? "Unknown shell";
   const imageSrc = device.primaryPhoto ?? "/placeholder-device.svg";
@@ -161,4 +164,4 @@ export function CollectionCard({ device, view = "grid" }: CollectionCardProps) {
       </div>
     </div>
   );
-}
+});

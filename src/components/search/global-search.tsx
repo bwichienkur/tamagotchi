@@ -60,7 +60,7 @@ export function GlobalSearch() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => search(query), 200);
+    const timer = setTimeout(() => search(query), 300);
     return () => clearTimeout(timer);
   }, [query, search]);
 

@@ -20,9 +20,11 @@ export function RemoteImage({
 }: RemoteImageProps) {
   const resolvedSrc = src || "/placeholder-device.svg";
   const needsUnoptimized =
-    resolvedSrc.startsWith("http") ||
     resolvedSrc.startsWith("/api/uploads/") ||
-    resolvedSrc.startsWith("/uploads/");
+    resolvedSrc.startsWith("/uploads/") ||
+    (resolvedSrc.startsWith("http") &&
+      !resolvedSrc.includes("blob.vercel-storage.com") &&
+      !resolvedSrc.includes("squarespace-cdn.com"));
 
   return (
     <Image

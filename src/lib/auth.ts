@@ -11,6 +11,8 @@ function authSecret() {
   return getAuthSecret();
 }
 
+const ROLE_CHECK_MS = 60 * 60 * 1000; // re-check user role at most once per hour
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   providers: [
@@ -67,11 +69,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             select: { role: true },
           });
           token.role = dbUser?.role ?? "user";
+          token.roleCheckedAt = Date.now();
         } catch (error) {
           console.error("Auth jwt callback error:", error);
           token.role = "user";
         }
         return token;
+      }
+
+      if (token.id && token.role) {
+        const checkedAt = (token.roleCheckedAt as number | undefined) ?? 0;
+        if (Date.now() - checkedAt < ROLE_CHECK_MS) {
+          return token;
+        }
       }
 
       if (token.id) {
@@ -83,9 +93,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (!dbUser) {
             delete token.id;
             delete token.role;
+            delete token.roleCheckedAt;
             return token;
           }
           token.role = dbUser.role;
+          token.roleCheckedAt = Date.now();
         } catch (error) {
           console.error("Auth jwt refresh error:", error);
         }

@@ -2,8 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
+import { getDeviceFamiliesWithModels } from "@/lib/cached-data";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { RemoteImage } from "@/components/ui/remote-image";
+
+export const revalidate = 3600;
 
 export default async function DeviceLibraryPage({
   searchParams,
@@ -26,22 +30,7 @@ export default async function DeviceLibraryPage({
       }
     }
 
-    const families = await prisma.deviceFamily.findMany({
-      orderBy: { sortOrder: "asc" },
-      include: {
-        deviceModels: {
-          include: {
-            _count: { select: { shells: true } },
-            shells: {
-              take: 1,
-              orderBy: { name: "asc" },
-              select: { primaryImage: true },
-            },
-          },
-          orderBy: { releaseYear: "asc" },
-        },
-      },
-    });
+    const families = await getDeviceFamiliesWithModels();
 
     return { ownedByModel, families };
   });
@@ -95,13 +84,13 @@ export default async function DeviceLibraryPage({
                 <Link key={model.id} href={`/devices/${model.slug}`}>
                   <Card className="cute-card h-full">
                     {imageUrl ? (
-                      <div className="aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                      <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-2">
+                        <RemoteImage
                           src={imageUrl}
                           alt={model.name}
-                          className="h-full w-full rounded-xl object-contain p-2"
-                          loading="lazy"
+                          fill
+                          className="object-contain p-2"
+                          sizes="(max-width: 768px) 50vw, 25vw"
                         />
                       </div>
                     ) : (

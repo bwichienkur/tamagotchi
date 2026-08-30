@@ -36,15 +36,27 @@ export function isDatabaseSetupError(error: unknown): boolean {
   return false;
 }
 
+let databaseReady: boolean | null = null;
+let databaseReadyAt = 0;
+const DATABASE_CHECK_MS = 60_000;
+
 export async function ensureDatabase(): Promise<void> {
   if (!hasDatabaseConfig()) {
     redirect("/setup");
   }
 
+  const now = Date.now();
+  if (databaseReady && now - databaseReadyAt < DATABASE_CHECK_MS) {
+    return;
+  }
+
   try {
     await prisma.$queryRaw`SELECT 1`;
     await prisma.deviceFamily.findFirst({ select: { id: true } });
+    databaseReady = true;
+    databaseReadyAt = now;
   } catch (error) {
+    databaseReady = false;
     if (isDatabaseSetupError(error)) {
       redirect("/setup");
     }
