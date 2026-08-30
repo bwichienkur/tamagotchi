@@ -57,20 +57,21 @@ export const CollectionCard = memo(function CollectionCard({
           </Link>
           <div className="flex min-w-0 flex-1 flex-col justify-center">
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/collection/${device.slug}`}
-                  className="font-semibold text-stone-900 hover:text-tama-cyan"
+                  className="font-semibold leading-tight text-stone-900 hover:text-tama-cyan"
                 >
                   {device.nickname ?? device.deviceModel.name}
                 </Link>
-                <p className="text-sm text-stone-500">{shellName}</p>
+                <p className="text-sm leading-snug text-stone-500">{shellName}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-start gap-1">
                 <ConditionBadge condition={device.conditionBadge} />
                 {device.favorite && (
                   <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
                 )}
+                <DeviceActionsMenu slug={device.slug} />
               </div>
             </div>
             {device.showMoreInfo && (
@@ -94,9 +95,6 @@ export const CollectionCard = memo(function CollectionCard({
                 </div>
               </div>
             )}
-            <div className="mt-3 flex justify-end">
-              <DeviceActionsMenu slug={device.slug} />
-            </div>
           </div>
         </div>
       </div>
@@ -124,24 +122,29 @@ export const CollectionCard = memo(function CollectionCard({
           </div>
         )}
       </div>
-      <div className="p-4 pt-3">
+      <div className="px-3 py-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <Link
               href={`/collection/${device.slug}`}
-              className="font-display block truncate font-bold text-stone-900 hover:text-tama-cyan"
+              className="font-display block truncate font-bold leading-tight text-stone-900 hover:text-tama-cyan"
             >
               {device.deviceModel.name}
             </Link>
-            <p className="truncate text-sm text-stone-500">{shellName}</p>
+            <p className="truncate text-sm leading-snug text-stone-500">{shellName}</p>
             {device.nickname && (
-              <p className="truncate text-xs text-stone-400">&ldquo;{device.nickname}&rdquo;</p>
+              <p className="truncate text-xs leading-snug text-stone-400">
+                &ldquo;{device.nickname}&rdquo;
+              </p>
             )}
           </div>
-          <ConditionBadge condition={device.conditionBadge} />
+          <div className="flex shrink-0 items-start gap-1">
+            <ConditionBadge condition={device.conditionBadge} />
+            <DeviceActionsMenu slug={device.slug} />
+          </div>
         </div>
         {device.showMoreInfo && (
-          <div className="mt-3 border-t border-stone-100 pt-3">
+          <div className="mt-2 border-t border-stone-100 pt-2">
             <button
               type="button"
               onClick={(e) => {
@@ -166,9 +169,6 @@ export const CollectionCard = memo(function CollectionCard({
             </div>
           </div>
         )}
-        <div className="mt-3 flex justify-end border-t border-stone-100 pt-3">
-          <DeviceActionsMenu slug={device.slug} />
-        </div>
       </div>
     </div>
   );
