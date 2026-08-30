@@ -4,6 +4,7 @@ import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
 import { DeleteWikiButton } from "@/components/wiki/delete-wiki-button";
+import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { DeviceShellGrid, DeviceShellItem } from "@/components/devices/device-shell-grid";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
@@ -32,14 +33,26 @@ interface WikiPageData {
   updatedAt: Date;
 }
 
+interface OwnedDeviceSummary {
+  slug: string;
+  label: string;
+}
+
 interface WikiPageViewProps {
   page: WikiPageData;
   ownedCount?: number;
+  ownedDevices?: OwnedDeviceSummary[];
   isAuthenticated?: boolean;
   shells?: DeviceShellItem[];
 }
 
-export function WikiPageView({ page, ownedCount = 0, isAuthenticated, shells = [] }: WikiPageViewProps) {
+export function WikiPageView({
+  page,
+  ownedCount = 0,
+  ownedDevices = [],
+  isAuthenticated,
+  shells = [],
+}: WikiPageViewProps) {
   const sections = (page.sections as WikiSection[]) ?? [];
   const tocItems = extractTocFromSections(sections);
 
@@ -124,9 +137,18 @@ export function WikiPageView({ page, ownedCount = 0, isAuthenticated, shells = [
             You own {ownedCount} {page.deviceModel?.name ?? "device"}
             {ownedCount > 1 ? "s" : ""}.
           </p>
-          <Link href="/collection" className="text-sm text-tama-cyan hover:underline">
-            View My Devices →
-          </Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {ownedDevices.map((device) => (
+              <EditDeviceButton
+                key={device.slug}
+                slug={device.slug}
+                label={`Edit ${device.label}`}
+              />
+            ))}
+            <Link href="/collection" className="text-sm text-tama-cyan hover:underline">
+              View all in collection →
+            </Link>
+          </div>
         </div>
       )}
 

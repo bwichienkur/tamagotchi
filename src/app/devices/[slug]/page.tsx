@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
 import { WikiPageView } from "@/components/wiki/wiki-page-view";
+import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { DeviceShellGrid } from "@/components/devices/device-shell-grid";
 
 async function getShellOwnedCounts(userId: string | undefined, deviceModelId: string) {
@@ -47,11 +48,15 @@ export default async function DeviceModelPage({
         where: { deviceModelId: device.id },
       }));
 
-    const ownedCount = session?.user?.id
-      ? await prisma.ownedDevice.count({
+    const ownedDevices = session?.user?.id
+      ? await prisma.ownedDevice.findMany({
           where: { userId: session.user.id, deviceModelId: device.id },
+          include: { shell: true },
+          orderBy: { createdAt: "desc" },
         })
-      : 0;
+      : [];
+
+    const ownedCount = ownedDevices.length;
 
     const shellOwnedCounts = await getShellOwnedCounts(session?.user?.id, device.id);
     const shellsWithOwnership = device.shells.map((shell) => ({
@@ -75,6 +80,14 @@ export default async function DeviceModelPage({
           <WikiPageView
             page={fullPage}
             ownedCount={ownedCount}
+            ownedDevices={ownedDevices.map((owned) => ({
+              slug: owned.slug,
+              label:
+                owned.nickname ??
+                owned.shell?.name ??
+                owned.customShellName ??
+                "my copy",
+            }))}
             isAuthenticated={!!session?.user}
             shells={shellsWithOwnership}
           />
@@ -95,9 +108,18 @@ export default async function DeviceModelPage({
           <div className="mt-6 rounded-xl border border-tama-pink/20 bg-tama-pink/5 p-4">
             <p className="font-medium">In My Collection</p>
             <p>You own {ownedCount} {device.name} device{ownedCount > 1 ? "s" : ""}.</p>
-            <Link href="/collection" className="text-tama-cyan hover:underline">
-              View My Devices →
-            </Link>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ownedDevices.map((owned) => (
+                <EditDeviceButton
+                  key={owned.slug}
+                  slug={owned.slug}
+                  label={`Edit ${owned.nickname ?? owned.shell?.name ?? owned.customShellName ?? "copy"}`}
+                />
+              ))}
+              <Link href="/collection" className="text-sm text-tama-cyan hover:underline">
+                View all in collection →
+              </Link>
+            </div>
           </div>
         )}
         <div className="mt-8">
