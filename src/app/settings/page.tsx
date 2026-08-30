@@ -27,7 +27,7 @@ export default async function SettingsPage() {
         <CardHeader>
           <CardTitle>Device Types</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="min-w-0">
           <p className="mb-4 text-sm text-stone-500">
             Add, rename, or remove device types used when building your collection.
           </p>
