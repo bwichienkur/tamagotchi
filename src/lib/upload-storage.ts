@@ -141,7 +141,6 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
     }
   } catch (error) {
     console.error("HEIC conversion failed:", error);
-    throw new Error("Could not process iPhone photo. Try saving as JPEG in Photos first.");
   }
 
   if (!mimeType) {
@@ -150,7 +149,7 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
 
   if (!mimeType || mimeType === "image/heic") {
     throw new Error(
-      "Unsupported image format. Please use JPEG, PNG, WebP, GIF, or iPhone HEIC photos."
+      "Could not process this photo. Open it in Photos, share as JPEG, and try again."
     );
   }
 
