@@ -7,6 +7,7 @@ import {
   resolveDeviceModelId,
   resolveShellId,
 } from "@/lib/resolve-owned-device-relations";
+import { ensurePhotoFramesColumn } from "@/lib/ensure-photo-frames";
 
 export async function PATCH(
   request: NextRequest,
@@ -34,6 +35,8 @@ export async function PATCH(
   }
 
   const data = parsed.data;
+
+  await ensurePhotoFramesColumn();
 
   let deviceModelId = device.deviceModelId;
   if (data.deviceModelId !== undefined || data.newDeviceModelName) {

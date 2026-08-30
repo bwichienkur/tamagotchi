@@ -17,6 +17,7 @@ import { createDeviceModelOption } from "@/lib/create-device-model";
 import { toDateInputValue } from "@/lib/owned-device-schema";
 import {
   DEFAULT_PHOTO_FRAME,
+  buildPhotoFramesForSave,
   getAdditionalPhotoFrame,
   getPrimaryPhotoFrame,
   parsePhotoFrames,
@@ -179,6 +180,12 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
 
     setSaving(true);
     try {
+      const framesToSave = buildPhotoFramesForSave(
+        primaryPhoto,
+        additionalPhotos,
+        photoFrames
+      );
+
       const res = await fetch(`/api/collection/${device.slug}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -188,7 +195,7 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
           newDeviceModelName,
           primaryPhoto: primaryPhoto ?? null,
           additionalPhotos,
-          photoFrames,
+          photoFrames: framesToSave,
           conditionBadge,
           conditionNotes: conditionNotes || null,
           nickname: nickname || null,
@@ -211,13 +218,20 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
         return;
       }
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          typeof data.error === "string"
+            ? data.error
+            : "Failed to save device changes"
+        );
+      }
 
       toast.success("Device updated!");
       router.push(`/collection/${device.slug}`);
       router.refresh();
-    } catch {
-      toast.error("Failed to update device");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update device");
     } finally {
       setSaving(false);
     }

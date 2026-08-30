@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug, createUniqueSlug } from "@/lib/slug";
+import { ensurePhotoFramesColumn } from "@/lib/ensure-photo-frames";
 import { z } from "zod";
 
 const createOwnedDeviceSchema = z.object({
@@ -135,6 +136,8 @@ export async function POST(request: NextRequest) {
 
   const slugBase = shell?.name ?? data.newShellName ?? deviceModel?.name ?? "device";
   const slug = createUniqueSlug(`${slugBase}-${deviceModel?.name ?? "tamagotchi"}`);
+
+  await ensurePhotoFramesColumn();
 
   const owned = await prisma.ownedDevice.create({
     data: {
