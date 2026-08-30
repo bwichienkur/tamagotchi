@@ -4,6 +4,7 @@ import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
+  TAMASHELL_SECTIONED_PAGE_SLUGS,
   type TamaShellCatalogEntry,
 } from "@/lib/importers/tamashell/catalog";
 import {
@@ -143,7 +144,7 @@ async function ensureGenerationModel(params: {
   return { id: created.id, created: true };
 }
 
-async function backfillOriginalTamagotchiSections(
+async function backfillSectionedCatalogEntry(
   entry: TamaShellCatalogEntry
 ): Promise<{ sectionsEnsured: number; shellsMoved: number; shellsSkipped: number }> {
   const familySlug = FAMILY_SLUG_MAP[entry.family];
@@ -154,7 +155,7 @@ async function backfillOriginalTamagotchiSections(
 
   const pageUrl = `https://www.tamashell.com/${entry.slug}`;
   const html = await fetchTamaShellPage(`/${entry.slug}`);
-  const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name);
+  const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
   if (!sections?.length) {
     return { sectionsEnsured: 0, shellsMoved: 0, shellsSkipped: 0 };
   }
@@ -249,12 +250,14 @@ async function backfillOriginalTamagotchiSections(
   return { sectionsEnsured, shellsMoved, shellsSkipped };
 }
 
-async function cleanupInvalidOriginalModels(entry: TamaShellCatalogEntry): Promise<number> {
-  const validGenerations = new Set<string>(DEVICE_GENERATION_PRESETS);
+async function cleanupInvalidSectionedModels(
+  entry: TamaShellCatalogEntry,
+  validGenerations: string[]
+): Promise<number> {
   const invalidModels = await prisma.deviceModel.findMany({
     where: {
       name: { equals: entry.name, mode: "insensitive" },
-      generation: { not: null, notIn: [...validGenerations] },
+      generation: { not: null, notIn: validGenerations },
     },
     include: {
       _count: { select: { ownedDevices: true, wikiPages: true, shells: true } },
@@ -288,16 +291,23 @@ export async function backfillDeviceGenerations(options?: {
   let invalidModelsRemoved = 0;
 
   if (!options?.skipNetwork) {
-    const originalEntry = TAMASHELL_CATALOG.find((entry) => entry.slug === "original");
-    if (originalEntry) {
+    for (const slug of TAMASHELL_SECTIONED_PAGE_SLUGS) {
+      const entry = TAMASHELL_CATALOG.find((item) => item.slug === slug);
+      if (!entry) continue;
+
       try {
-        const result = await backfillOriginalTamagotchiSections(originalEntry);
-        sectionsEnsured = result.sectionsEnsured;
-        shellsMoved = result.shellsMoved;
-        shellsSkipped = result.shellsSkipped;
-        invalidModelsRemoved += await cleanupInvalidOriginalModels(originalEntry);
+        const result = await backfillSectionedCatalogEntry(entry);
+        sectionsEnsured += result.sectionsEnsured;
+        shellsMoved += result.shellsMoved;
+        shellsSkipped += result.shellsSkipped;
+
+        if (entry.slug === "original") {
+          invalidModelsRemoved += await cleanupInvalidSectionedModels(entry, [
+            ...DEVICE_GENERATION_PRESETS,
+          ]);
+        }
       } catch (error) {
-        console.error("Original Tamagotchi section backfill failed:", error);
+        console.error(`Section backfill failed for ${entry.name}:`, error);
       }
     }
   }

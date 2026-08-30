@@ -276,7 +276,7 @@ export class TamaShellImporter {
         const pageUrl = `https://www.tamashell.com/${entry.slug}`;
         await this.respectRateLimit();
         const html = await fetchTamaShellPage(`/${entry.slug}`);
-        const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name);
+        const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
 
         if (sections) {
           for (const section of sections) {

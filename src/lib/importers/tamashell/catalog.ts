@@ -5,6 +5,11 @@ export type TamaShellFamily =
   | "Classic Remakes"
   | "Others";
 
+/** TamaShell pages that use in-page anchor navigation for series/franchise sections. */
+export const TAMASHELL_SECTIONED_PAGE_SLUGS = ["original", "licensed"] as const;
+
+export type TamaShellSectionedPageSlug = (typeof TAMASHELL_SECTIONED_PAGE_SLUGS)[number];
+
 export interface TamaShellCatalogEntry {
   slug: string;
   name: string;

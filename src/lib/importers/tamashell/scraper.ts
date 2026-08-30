@@ -1,6 +1,7 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 import type { TamaShellShell } from "./index";
+import { TAMASHELL_SECTIONED_PAGE_SLUGS } from "./catalog";
 
 const TAMASHELL_ORIGIN = "https://www.tamashell.com";
 const CONTENT_MARKER = "6617055158d1f12af2c75e0c";
@@ -12,10 +13,18 @@ const INVALID_SECTION_LABELS = new Set([
   "gallery",
 ]);
 
-function isValidSectionAnchor(anchorId: string, generation: string): boolean {
+function isValidSectionAnchor(
+  anchorId: string,
+  generation: string,
+  pageSlug?: string
+): boolean {
   if (!anchorId || !generation) return false;
   if (INVALID_SECTION_LABELS.has(generation.toLowerCase())) return false;
   if (generation.length < 2 || generation.length > 80) return false;
+  if (pageSlug && TAMASHELL_SECTIONED_PAGE_SLUGS.includes(pageSlug as never)) {
+    if (pageSlug === "original") return /^gen/i.test(anchorId);
+    return true;
+  }
   return /^gen/i.test(anchorId);
 }
 
@@ -83,7 +92,10 @@ function anchorPosition($: CheerioAPI, anchorId: string): number {
   return position === -1 ? Number.MAX_SAFE_INTEGER : position;
 }
 
-function discoverSections($: CheerioAPI): Array<{ anchorId: string; generation: string }> {
+function discoverSections(
+  $: CheerioAPI,
+  pageSlug?: string
+): Array<{ anchorId: string; generation: string }> {
   const sections: Array<{ anchorId: string; generation: string }> = [];
   const seen = new Set<string>();
 
@@ -93,7 +105,7 @@ function discoverSections($: CheerioAPI): Array<{ anchorId: string; generation: 
     const generation = $(el).text().replace(/\|/g, "").trim();
     if (!anchorId || !generation || seen.has(anchorId)) return;
     if (!$(`#${anchorId}`).length) return;
-    if (!isValidSectionAnchor(anchorId, generation)) return;
+    if (!isValidSectionAnchor(anchorId, generation, pageSlug)) return;
     seen.add(anchorId);
     sections.push({ anchorId, generation });
   });
@@ -123,10 +135,11 @@ function parseShellsBetweenAnchors(
 export function parseShellSectionsFromHtml(
   html: string,
   pageUrl: string,
-  deviceName: string
+  deviceName: string,
+  pageSlug?: string
 ): TamaShellSection[] | null {
   const $ = cheerio.load(html);
-  const sections = discoverSections($);
+  const sections = discoverSections($, pageSlug);
   if (sections.length < 2) return null;
 
   const fullHtml = $.html();

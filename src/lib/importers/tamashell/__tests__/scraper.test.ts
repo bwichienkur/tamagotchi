@@ -44,7 +44,8 @@ describe("parseShellSectionsFromHtml", () => {
     const sections = parseShellSectionsFromHtml(
       SECTION_HTML,
       "https://www.tamashell.com/original",
-      "Original Tamagotchi"
+      "Original Tamagotchi",
+      "original"
     );
 
     expect(sections).not.toBeNull();
@@ -63,5 +64,27 @@ describe("parseShellSectionsFromHtml", () => {
     );
 
     expect(sections).toBeNull();
+  });
+
+  it("parses franchise sections on licensed nano pages", () => {
+    const licensedHtml = `
+      <a href="/licensed/#HK">Hello Kitty</a>
+      <a href="/licensed/#OP">One Piece</a>
+      <div id="HK"></div>
+      <img alt="Red Bow" data-src="https://images.squarespace-cdn.com/content/v1/6617055158d1f12af2c75e0c/hk.jpg" />
+      <div id="OP"></div>
+      <img alt="Luffy" data-src="https://images.squarespace-cdn.com/content/v1/6617055158d1f12af2c75e0c/op.jpg" />
+    `;
+
+    const sections = parseShellSectionsFromHtml(
+      licensedHtml,
+      "https://www.tamashell.com/licensed",
+      "Licensed Tamagotchi Nanos",
+      "licensed"
+    );
+
+    expect(sections).toHaveLength(2);
+    expect(sections?.[0].generation).toBe("Hello Kitty");
+    expect(sections?.[1].generation).toBe("One Piece");
   });
 });

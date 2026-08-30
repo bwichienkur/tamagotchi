@@ -3,13 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
 import { getDeviceFamiliesWithModels } from "@/lib/cached-data";
-import {
-  DEVICE_GENERATION_PRESETS,
-  type DeviceGenerationPreset,
-} from "@/lib/device-generations";
+import { sortSeriesLabels } from "@/lib/device-series";
 import { PageHeader } from "@/components/layout/page-header";
-import { Card, CardContent } from "@/components/ui/card";
-import { RemoteImage } from "@/components/ui/remote-image";
+import { DeviceLibraryGrid } from "@/components/devices/device-library-grid";
 
 function devicesHref(family?: string, generation?: string) {
   const params = new URLSearchParams();
@@ -17,17 +13,6 @@ function devicesHref(family?: string, generation?: string) {
   if (generation) params.set("generation", generation);
   const query = params.toString();
   return query ? `/devices?${query}` : "/devices";
-}
-
-function sortGenerations(generations: string[]) {
-  return [...generations].sort((a, b) => {
-    const ai = DEVICE_GENERATION_PRESETS.indexOf(a as DeviceGenerationPreset);
-    const bi = DEVICE_GENERATION_PRESETS.indexOf(b as DeviceGenerationPreset);
-    if (ai === -1 && bi === -1) return a.localeCompare(b);
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
 }
 
 export default async function DeviceLibraryPage({
@@ -60,7 +45,7 @@ export default async function DeviceLibraryPage({
     ? families.filter((f) => f.slug === familySlug)
     : families;
 
-  const availableGenerations = sortGenerations([
+  const availableGenerations = sortSeriesLabels([
     ...new Set(
       scopedFamilies
         .flatMap((family) => family.deviceModels)
@@ -152,55 +137,10 @@ export default async function DeviceLibraryPage({
             {family.description && (
               <p className="mb-6 text-stone-500">{family.description}</p>
             )}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {family.deviceModels.map((model) => {
-                const ownedCount = ownedByModel[model.id] ?? 0;
-                const imageUrl = model.heroImage ?? model.shells[0]?.primaryImage ?? null;
-                return (
-                  <Link key={model.id} href={`/devices/${model.slug}`}>
-                    <Card className="cute-card h-full">
-                      {imageUrl ? (
-                        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-2">
-                          <RemoteImage
-                            src={imageUrl}
-                            alt={model.name}
-                            fill
-                            className="object-contain p-2"
-                            sizes="(max-width: 768px) 50vw, 25vw"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10" />
-                      )}
-                      <CardContent className="pt-4">
-                        <h3 className="font-display font-bold text-stone-900">
-                          {model.name}
-                        </h3>
-                        {model.generation && (
-                          <p className="text-xs font-medium text-stone-500">
-                            {model.generation}
-                          </p>
-                        )}
-                        <p className="text-sm text-stone-500">
-                          {model.releaseYear ?? "—"}
-                        </p>
-                        <p className="mt-1 text-xs text-stone-400">
-                          {model._count.shells} known shells
-                        </p>
-                        {ownedCount > 0 && (
-                          <p className="mt-2 text-xs font-medium text-tama-cyan">
-                            ✓ Owned{ownedCount > 1 ? ` × ${ownedCount}` : ""}
-                          </p>
-                        )}
-                        <span className="mt-2 inline-block text-sm text-tama-cyan">
-                          View Device →
-                        </span>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
+            <DeviceLibraryGrid
+              models={family.deviceModels}
+              ownedByModel={ownedByModel}
+            />
           </section>
         ))
       )}
