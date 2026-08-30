@@ -21,7 +21,6 @@ interface ShellData {
     id: string;
     name: string;
     slug: string;
-    generation?: string | null;
     family?: { id: string; name: string; slug: string } | null;
   };
   ownedCount: number;

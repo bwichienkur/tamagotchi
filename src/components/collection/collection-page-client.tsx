@@ -27,7 +27,6 @@ interface CollectionDevice {
     id: string;
     name: string;
     releaseYear?: number | null;
-    generation?: string | null;
     family?: { id: string; name: string } | null;
   };
   shell?: { id: string; name: string; region?: string | null } | null;

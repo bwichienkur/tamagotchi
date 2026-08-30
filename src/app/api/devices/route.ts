@@ -9,7 +9,6 @@ import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 const createDeviceModelSchema = z.object({
   name: z.string().trim().min(1).max(120),
   familyId: z.string().optional(),
-  generation: z.string().trim().max(120).optional().nullable(),
 });
 
 export async function GET(request: NextRequest) {
@@ -63,9 +62,8 @@ export async function POST(request: NextRequest) {
       name,
       slug,
       familyId: await resolveFamilyIdForCreate(parsed.data.familyId),
-      generation: parsed.data.generation || null,
     },
-    select: { id: true, name: true, slug: true, familyId: true, generation: true },
+    select: { id: true, name: true, slug: true, familyId: true },
   });
 
   revalidateDeviceCatalog();

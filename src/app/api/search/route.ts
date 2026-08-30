@@ -16,10 +16,7 @@ export async function GET(request: NextRequest) {
   const [devices, shells, ownedDevices, wikiPages] = await Promise.all([
     prisma.deviceModel.findMany({
       where: {
-        OR: [
-          { name: { contains: q, mode: "insensitive" } },
-          { generation: { contains: q, mode: "insensitive" } },
-        ],
+        OR: [{ name: { contains: q, mode: "insensitive" } }],
       },
       include: { family: true },
       take: 5,

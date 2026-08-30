@@ -107,23 +107,6 @@ model DeviceFamily {
   updatedAt   DateTime      @updatedAt
 
   deviceModels DeviceModel[]
-  deviceSeries DeviceSeries[]
-}
-
-model DeviceSeries {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  familyId  String
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  family       DeviceFamily  @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  deviceModels DeviceModel[]
-
-  @@unique([familyId, name])
-  @@index([familyId])
 }
 
 model DeviceModel {
@@ -138,15 +121,12 @@ model DeviceModel {
   regions        String[]  @default([])
   description    String?   @db.Text
   heroImage      String?
-  generation     String?
-  seriesId       String?
   predecessorId  String?
   successorId    String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   family        DeviceFamily  @relation(fields: [familyId], references: [id])
-  series        DeviceSeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   predecessor   DeviceModel?  @relation("DevicePredecessor", fields: [predecessorId], references: [id])
   successors    DeviceModel[] @relation("DevicePredecessor")
   shells        Shell[]
@@ -156,7 +136,6 @@ model DeviceModel {
   galleryImages GalleryImage[]
 
   @@index([familyId])
-  @@index([seriesId])
   @@index([name])
   @@index([releaseYear])
 }

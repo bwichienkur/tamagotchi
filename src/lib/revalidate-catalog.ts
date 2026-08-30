@@ -6,9 +6,8 @@ export function revalidateDeviceCatalog() {
     revalidateTag("device-catalog", "max");
     revalidatePath("/devices");
     revalidatePath("/collection");
-  revalidatePath("/manage/device-types");
-  revalidatePath("/manage/series");
-  revalidatePath("/manage/shells");
+    revalidatePath("/manage/device-types");
+    revalidatePath("/manage/shells");
   } catch {
     // No-op outside Next.js request context (CLI scripts, seeds, etc.)
   }

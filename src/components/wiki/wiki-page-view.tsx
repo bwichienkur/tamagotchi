@@ -22,7 +22,6 @@ interface WikiPageData {
     releaseYear?: number | null;
     manufacturer?: string | null;
     regions?: string[];
-    generation?: string | null;
     family?: { name: string } | null;
     properties?: Array<{ group: string; label: string; value: string; sortOrder: number }>;
     shells?: Array<{ id: string; name: string; slug: string }>;
@@ -72,7 +71,6 @@ export function WikiPageView({
         { group: "Details", label: "Manufacturer", value: dm.manufacturer ?? "Bandai" },
         { group: "Details", label: "Release", value: dm.releaseYear?.toString() ?? "—" },
         { group: "Details", label: "Region", value: dm.regions?.join(", ") || "—" },
-        { group: "Technical", label: "Generation", value: dm.generation ?? "—" },
       );
     } else {
       for (const [group, fields] of Object.entries(propGroups)) {

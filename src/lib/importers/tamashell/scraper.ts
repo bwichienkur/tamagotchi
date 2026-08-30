@@ -1,7 +1,6 @@
 import * as cheerio from "cheerio";
 import type { CheerioAPI } from "cheerio";
 import type { TamaShellShell } from "./index";
-import { TAMASHELL_SECTIONED_PAGE_SLUGS } from "./catalog";
 
 const TAMASHELL_ORIGIN = "https://www.tamashell.com";
 const CONTENT_MARKER = "6617055158d1f12af2c75e0c";
@@ -11,26 +10,24 @@ const INVALID_SECTION_LABELS = new Set([
   "tamashell",
   "home",
   "gallery",
+  "back",
 ]);
 
-function isValidSectionAnchor(
-  anchorId: string,
-  generation: string,
-  pageSlug?: string
-): boolean {
-  if (!anchorId || !generation) return false;
-  if (INVALID_SECTION_LABELS.has(generation.toLowerCase())) return false;
-  if (generation.length < 2 || generation.length > 80) return false;
-  if (pageSlug && TAMASHELL_SECTIONED_PAGE_SLUGS.includes(pageSlug as never)) {
-    if (pageSlug === "original") return /^gen/i.test(anchorId);
-    return true;
-  }
-  return /^gen/i.test(anchorId);
-}
+/** Default labels for pages with multiple galleries but no in-page nav. */
+const GALLERY_FALLBACK_LABELS = ["Special Edition", "Limited Edition", "Exclusives"];
 
 export interface TamaShellSection {
-  generation: string;
+  /** Section label from TamaShell; omitted for the primary gallery on a page. */
+  sectionLabel: string | null;
   shells: TamaShellShell[];
+}
+
+function isValidSectionAnchor(anchorId: string, label: string): boolean {
+  if (!anchorId || !label) return false;
+  if (INVALID_SECTION_LABELS.has(label.toLowerCase())) return false;
+  if (label.length < 2 || label.length > 80) return false;
+  if (anchorId === "page") return false;
+  return true;
 }
 
 export function normalizeImageUrl(src: string): string {
@@ -92,25 +89,24 @@ function anchorPosition($: CheerioAPI, anchorId: string): number {
   return position === -1 ? Number.MAX_SAFE_INTEGER : position;
 }
 
-function discoverSections(
-  $: CheerioAPI,
-  pageSlug?: string
-): Array<{ anchorId: string; generation: string }> {
-  const sections: Array<{ anchorId: string; generation: string }> = [];
+function discoverAnchorLabels($: CheerioAPI): string[] {
+  const sections: Array<{ anchorId: string; label: string }> = [];
   const seen = new Set<string>();
 
   $("a[href*='#']").each((_, el) => {
     const href = $(el).attr("href") ?? "";
     const anchorId = href.split("#").pop()?.trim();
-    const generation = $(el).text().replace(/\|/g, "").trim();
-    if (!anchorId || !generation || seen.has(anchorId)) return;
+    const label = $(el).text().replace(/\|/g, "").trim();
+    if (!anchorId || !label || seen.has(anchorId)) return;
     if (!$(`#${anchorId}`).length) return;
-    if (!isValidSectionAnchor(anchorId, generation, pageSlug)) return;
+    if (!isValidSectionAnchor(anchorId, label)) return;
     seen.add(anchorId);
-    sections.push({ anchorId, generation });
+    sections.push({ anchorId, label });
   });
 
-  return sections.sort((a, b) => anchorPosition($, a.anchorId) - anchorPosition($, b.anchorId));
+  return sections
+    .sort((a, b) => anchorPosition($, a.anchorId) - anchorPosition($, b.anchorId))
+    .map((section) => section.label);
 }
 
 function parseShellsBetweenAnchors(
@@ -131,28 +127,134 @@ function parseShellsBetweenAnchors(
   return parseShellsFromHtml(slice, pageUrl, deviceName);
 }
 
-/** Parse generation-grouped shell sections when TamaShell uses in-page anchors. */
-export function parseShellSectionsFromHtml(
-  html: string,
+function discoverAnchorSections(
+  $: CheerioAPI,
+  fullHtml: string,
   pageUrl: string,
-  deviceName: string,
-  pageSlug?: string
+  deviceName: string
 ): TamaShellSection[] | null {
-  const $ = cheerio.load(html);
-  const sections = discoverSections($, pageSlug);
-  if (sections.length < 2) return null;
+  const anchors: Array<{ anchorId: string; label: string }> = [];
+  const seen = new Set<string>();
 
-  const fullHtml = $.html();
-  return sections.map((section, index) => ({
-    generation: section.generation,
+  $("a[href*='#']").each((_, el) => {
+    const href = $(el).attr("href") ?? "";
+    const anchorId = href.split("#").pop()?.trim();
+    const label = $(el).text().replace(/\|/g, "").trim();
+    if (!anchorId || !label || seen.has(anchorId)) return;
+    if (!$(`#${anchorId}`).length) return;
+    if (!isValidSectionAnchor(anchorId, label)) return;
+    seen.add(anchorId);
+    anchors.push({ anchorId, label });
+  });
+
+  if (anchors.length < 2) return null;
+
+  anchors.sort((a, b) => anchorPosition($, a.anchorId) - anchorPosition($, b.anchorId));
+
+  return anchors.map((anchor, index) => ({
+    sectionLabel: anchor.label,
     shells: parseShellsBetweenAnchors(
       fullHtml,
       pageUrl,
       deviceName,
-      section.anchorId,
-      sections[index + 1]?.anchorId
+      anchor.anchorId,
+      anchors[index + 1]?.anchorId
     ),
   }));
+}
+
+function splitHtmlByGallerySections(html: string): string[] {
+  const parts = html.split(/(?=<section[^>]*data-test="page-section")/i);
+  const galleries: string[] = [];
+
+  for (const part of parts) {
+    if (!/data-sqsp-section="gallery"/i.test(part)) continue;
+    galleries.push(part);
+  }
+
+  return galleries;
+}
+
+function labelForGalleryIndex(
+  index: number,
+  anchorLabels: string[],
+  galleryCount: number
+): string | null {
+  if (galleryCount === 1) return null;
+
+  if (anchorLabels.length === galleryCount) {
+    return anchorLabels[index] ?? null;
+  }
+
+  if (anchorLabels.length + 1 === galleryCount) {
+    if (index === 0) return null;
+    return anchorLabels[index - 1] ?? GALLERY_FALLBACK_LABELS[index - 1] ?? `Section ${index + 1}`;
+  }
+
+  if (index === 0) return null;
+  if (anchorLabels[index]) return anchorLabels[index];
+  return GALLERY_FALLBACK_LABELS[index - 1] ?? `Section ${index + 1}`;
+}
+
+function parseGallerySections(
+  html: string,
+  pageUrl: string,
+  deviceName: string,
+  anchorLabels: string[]
+): TamaShellSection[] | null {
+  const galleryChunks = splitHtmlByGallerySections(html);
+  if (galleryChunks.length === 0) return null;
+
+  const sections = galleryChunks
+    .map((chunk, index) => ({
+      sectionLabel: labelForGalleryIndex(index, anchorLabels, galleryChunks.length),
+      shells: parseShellsFromHtml(chunk, pageUrl, deviceName),
+    }))
+    .filter((section) => section.shells.length > 0);
+
+  if (sections.length === 0) return null;
+  if (sections.length === 1 && !sections[0].sectionLabel) return null;
+
+  return sections;
+}
+
+/** Build device display name from catalog page title and optional section label. */
+export function buildSectionDeviceName(pageName: string, sectionLabel: string | null): string {
+  if (!sectionLabel) return pageName;
+  if (pageName.toLowerCase().includes(sectionLabel.toLowerCase())) return pageName;
+  return `${pageName} ${sectionLabel}`;
+}
+
+/** Build stable slug for a section device on a TamaShell catalog page. */
+export function buildSectionDeviceSlug(pageSlug: string, sectionLabel: string | null): string {
+  if (!sectionLabel) return pageSlug;
+  return `${pageSlug}-${sectionLabel}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Parse TamaShell page sections. Each section becomes its own device when a page
+ * has multiple galleries or in-page anchor groups.
+ */
+export function parseShellSectionsFromHtml(
+  html: string,
+  pageUrl: string,
+  deviceName: string,
+  _pageSlug?: string
+): TamaShellSection[] | null {
+  const $ = cheerio.load(html);
+  const fullHtml = $.html();
+  const anchorLabels = discoverAnchorLabels($);
+
+  const gallerySections = parseGallerySections(fullHtml, pageUrl, deviceName, anchorLabels);
+  if (gallerySections) return gallerySections;
+
+  const anchorSections = discoverAnchorSections($, fullHtml, pageUrl, deviceName);
+  if (anchorSections) return anchorSections;
+
+  return null;
 }
 
 export async function fetchTamaShellPage(path: string): Promise<string> {

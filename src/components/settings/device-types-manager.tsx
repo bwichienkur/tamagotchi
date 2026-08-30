@@ -11,8 +11,6 @@ interface DeviceTypeRecord {
   id: string;
   name: string;
   slug: string;
-  generation?: string | null;
-  series?: { id: string; name: string } | null;
   family: { id: string; name: string };
   _count: {
     ownedDevices: number;
@@ -26,45 +24,30 @@ interface FamilyOption {
   name: string;
 }
 
-interface SeriesOption {
-  id: string;
-  name: string;
-  family: { id: string; name: string };
-}
-
 interface DeviceTypesManagerProps {
   families: FamilyOption[];
 }
 
 export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
   const [deviceTypes, setDeviceTypes] = useState<DeviceTypeRecord[]>([]);
-  const [seriesOptions, setSeriesOptions] = useState<SeriesOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
   const [newFamilyId, setNewFamilyId] = useState(families[0]?.id ?? "");
-  const [newSeriesId, setNewSeriesId] = useState("");
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editFamilyId, setEditFamilyId] = useState("");
-  const [editSeriesId, setEditSeriesId] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const loadDeviceTypes = useCallback(async () => {
     setLoading(true);
     try {
-      const [typesRes, seriesRes] = await Promise.all([
-        fetch("/api/device-types", { credentials: "include" }),
-        fetch("/api/series", { credentials: "include" }),
-      ]);
+      const typesRes = await fetch("/api/device-types", { credentials: "include" });
       if (!typesRes.ok) throw new Error("Failed to load device types");
       const data = (await typesRes.json()) as DeviceTypeRecord[];
       setDeviceTypes(data);
-      if (seriesRes.ok) {
-        setSeriesOptions((await seriesRes.json()) as SeriesOption[]);
-      }
     } catch {
       toast.error("Failed to load device types");
     } finally {
@@ -83,18 +66,9 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
       (type) =>
         type.name.toLowerCase().includes(query) ||
         type.family.name.toLowerCase().includes(query) ||
-        type.generation?.toLowerCase().includes(query) ||
         type.slug.toLowerCase().includes(query)
     );
   }, [deviceTypes, search]);
-
-  const seriesForFamily = useCallback(
-    (familyId: string) => seriesOptions.filter((series) => series.family.id === familyId),
-    [seriesOptions]
-  );
-
-  const seriesLabel = (type: DeviceTypeRecord) =>
-    type.series?.name ?? type.generation ?? null;
 
   const handleAdd = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -110,7 +84,6 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         body: JSON.stringify({
           name,
           familyId: newFamilyId,
-          seriesId: newSeriesId || null,
         }),
       });
 
@@ -125,7 +98,6 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         return [...withoutDuplicate, created].sort((a, b) => a.name.localeCompare(b.name));
       });
       setNewName("");
-      setNewSeriesId("");
       toast.success(created.name === name ? "Device type added" : "Device type already exists");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add device type");
@@ -138,14 +110,12 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
     setEditingId(type.id);
     setEditName(type.name);
     setEditFamilyId(type.family.id);
-    setEditSeriesId(type.series?.id ?? "");
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setEditName("");
     setEditFamilyId("");
-    setEditSeriesId("");
   };
 
   const handleSaveEdit = async (id: string) => {
@@ -164,7 +134,6 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
         body: JSON.stringify({
           name,
           familyId: editFamilyId,
-          seriesId: editSeriesId || null,
         }),
       });
 
@@ -221,30 +190,15 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
 
   return (
     <div className="min-w-0 space-y-3">
-      <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <form onSubmit={handleAdd} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
         <select
           value={newFamilyId}
-          onChange={(event) => {
-            setNewFamilyId(event.target.value);
-            setNewSeriesId("");
-          }}
+          onChange={(event) => setNewFamilyId(event.target.value)}
           className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-sm"
         >
           {families.map((family) => (
             <option key={family.id} value={family.id}>
               {family.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={newSeriesId}
-          onChange={(event) => setNewSeriesId(event.target.value)}
-          className="h-9 rounded-xl border border-stone-200 bg-white px-3 text-sm"
-        >
-          <option value="">No series</option>
-          {seriesForFamily(newFamilyId).map((series) => (
-            <option key={series.id} value={series.id}>
-              {series.name}
             </option>
           ))}
         </select>
@@ -309,10 +263,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                   <div className="flex min-w-0 flex-col gap-2">
                     <select
                       value={editFamilyId}
-                      onChange={(event) => {
-                        setEditFamilyId(event.target.value);
-                        setEditSeriesId("");
-                      }}
+                      onChange={(event) => setEditFamilyId(event.target.value)}
                       className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-sm"
                     >
                       {families.map((family) => (
@@ -321,62 +272,50 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                         </option>
                       ))}
                     </select>
-                    <select
-                      value={editSeriesId}
-                      onChange={(event) => setEditSeriesId(event.target.value)}
-                      className="h-8 rounded-lg border border-stone-200 bg-white px-2 text-sm"
-                    >
-                      <option value="">No series</option>
-                      {seriesForFamily(editFamilyId).map((series) => (
-                        <option key={series.id} value={series.id}>
-                          {series.name}
-                        </option>
-                      ))}
-                    </select>
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-                    <Input
-                      value={editName}
-                      onChange={(event) => setEditName(event.target.value)}
-                      autoFocus
-                      className="h-8 min-w-0 w-full sm:flex-1"
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          void handleSaveEdit(type.id);
-                        }
-                        if (event.key === "Escape") cancelEdit();
-                      }}
-                    />
-                    <div className="flex shrink-0 gap-2 self-end sm:self-auto">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-8 px-2 sm:px-3"
-                        onClick={() => void handleSaveEdit(type.id)}
-                        disabled={savingId === type.id}
-                        aria-label="Save device type"
-                      >
-                        {savingId === type.id ? (
-                          "..."
-                        ) : (
-                          <>
-                            <Check className="h-3.5 w-3.5 sm:hidden" />
-                            <span className="hidden sm:inline">Save</span>
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 sm:px-3"
-                        onClick={cancelEdit}
-                        aria-label="Cancel editing"
-                      >
-                        <X className="h-3.5 w-3.5 sm:hidden" />
-                        <span className="hidden sm:inline">Cancel</span>
-                      </Button>
-                    </div>
+                      <Input
+                        value={editName}
+                        onChange={(event) => setEditName(event.target.value)}
+                        autoFocus
+                        className="h-8 min-w-0 w-full sm:flex-1"
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void handleSaveEdit(type.id);
+                          }
+                          if (event.key === "Escape") cancelEdit();
+                        }}
+                      />
+                      <div className="flex shrink-0 gap-2 self-end sm:self-auto">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 px-2 sm:px-3"
+                          onClick={() => void handleSaveEdit(type.id)}
+                          disabled={savingId === type.id}
+                          aria-label="Save device type"
+                        >
+                          {savingId === type.id ? (
+                            "..."
+                          ) : (
+                            <>
+                              <Check className="h-3.5 w-3.5 sm:hidden" />
+                              <span className="hidden sm:inline">Save</span>
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2 sm:px-3"
+                          onClick={cancelEdit}
+                          aria-label="Cancel editing"
+                        >
+                          <X className="h-3.5 w-3.5 sm:hidden" />
+                          <span className="hidden sm:inline">Cancel</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -385,10 +324,7 @@ export function DeviceTypesManager({ families }: DeviceTypesManagerProps) {
                       <p className="truncate text-sm font-medium text-stone-900">
                         {type.name}
                       </p>
-                      <p className="truncate text-xs text-stone-500">
-                        {type.family.name}
-                        {seriesLabel(type) ? ` · ${seriesLabel(type)}` : ""}
-                      </p>
+                      <p className="truncate text-xs text-stone-500">{type.family.name}</p>
                     </div>
                     <Button
                       type="button"
