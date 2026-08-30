@@ -6,7 +6,6 @@ import pg from "pg";
 import { getDatabaseUrl, getMigrationDatabaseUrl } from "../src/lib/db";
 import { DEMO_EMAIL } from "../src/lib/app-name";
 import { TamaShellImporter } from "../src/lib/importers/tamashell";
-import { backfillDeviceGenerations } from "../src/lib/backfill-device-generations";
 
 const pool = new pg.Pool({ connectionString: getMigrationDatabaseUrl() ?? getDatabaseUrl() });
 const adapter = new PrismaPg(pool);
@@ -69,19 +68,11 @@ async function main() {
       console.log(
         `TamaShell import: ${result.devices} devices processed, ${result.shells} shells added, ${result.skipped} skipped`
       );
-      const backfill = await backfillDeviceGenerations();
-      console.log("Generation backfill:", backfill);
     } catch (error) {
       console.error("TamaShell import failed (continuing seed):", error);
     }
   } else {
     console.log("Skipping TamaShell import (SKIP_TAMASHELL_IMPORT=true)");
-    try {
-      const backfill = await backfillDeviceGenerations({ skipNetwork: true });
-      console.log("Generation backfill (db-only):", backfill);
-    } catch (error) {
-      console.error("Generation backfill failed (continuing seed):", error);
-    }
   }
 
   console.log(`Seed completed. Demo user: ${DEMO_EMAIL} / demo1234`);

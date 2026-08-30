@@ -4,7 +4,7 @@ import { resolveFamilyIdForCreate } from "@/lib/device-family";
 import type { OwnedDeviceInput } from "@/lib/owned-device-schema";
 
 export async function resolveDeviceModelId(
-  data: Pick<OwnedDeviceInput, "deviceModelId" | "newDeviceModelName" | "familyId" | "generation">
+  data: Pick<OwnedDeviceInput, "deviceModelId" | "newDeviceModelName" | "familyId">
 ): Promise<string | undefined> {
   let deviceModelId = data.deviceModelId;
 
@@ -19,7 +19,6 @@ export async function resolveDeviceModelId(
           name: data.newDeviceModelName,
           slug,
           familyId: await resolveFamilyIdForCreate(data.familyId),
-          generation: data.generation || null,
         },
       });
       deviceModelId = created.id;

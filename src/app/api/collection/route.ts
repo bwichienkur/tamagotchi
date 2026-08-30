@@ -11,7 +11,6 @@ const createOwnedDeviceSchema = z.object({
   deviceModelId: z.string().optional(),
   newDeviceModelName: z.string().optional(),
   familyId: z.string().optional(),
-  generation: z.string().trim().max(120).optional().nullable(),
   shellId: z.string().optional(),
   newShellName: z.string().optional(),
   nickname: z.string().optional(),
@@ -84,7 +83,6 @@ export async function POST(request: NextRequest) {
     const resolved = await resolveDeviceModelId({
       newDeviceModelName: data.newDeviceModelName,
       familyId: data.familyId,
-      generation: data.generation,
     });
     if (resolved) {
       deviceModelId = resolved;

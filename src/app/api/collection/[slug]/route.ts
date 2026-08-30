@@ -44,7 +44,6 @@ export async function PATCH(
       deviceModelId: data.deviceModelId ?? device.deviceModelId,
       newDeviceModelName: data.newDeviceModelName,
       familyId: data.familyId,
-      generation: data.generation,
     });
     if (!resolved) {
       return NextResponse.json({ error: "Device model required" }, { status: 400 });

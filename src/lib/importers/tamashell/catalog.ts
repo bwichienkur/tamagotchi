@@ -5,17 +5,10 @@ export type TamaShellFamily =
   | "Classic Remakes"
   | "Others";
 
-/** TamaShell pages that use in-page anchor navigation for series/franchise sections. */
-export const TAMASHELL_SECTIONED_PAGE_SLUGS = ["original", "licensed"] as const;
-
-export type TamaShellSectionedPageSlug = (typeof TAMASHELL_SECTIONED_PAGE_SLUGS)[number];
-
 export interface TamaShellCatalogEntry {
   slug: string;
   name: string;
   family: TamaShellFamily;
-  /** Series label shown on TamaShell (assigned to DeviceModel.generation on import). */
-  generation?: string;
 }
 
 /** Device pages from https://www.tamashell.com navigation (excluding folder links). */
@@ -62,9 +55,9 @@ export const TAMASHELL_CATALOG: TamaShellCatalogEntry[] = [
   { slug: "smart", name: "Tamagotchi Smart", family: "Modern" },
   { slug: "uni", name: "Tamagotchi Uni", family: "Modern" },
   { slug: "paradise", name: "Tamagotchi Paradise", family: "Modern" },
-  { slug: "20mini", name: "Kaette Kita! Chibi Tamagotchi", family: "Classic Remakes", generation: "Chibi" },
+  { slug: "20mini", name: "Kaette Kita! Chibi Tamagotchi", family: "Classic Remakes" },
   { slug: "original", name: "Original Tamagotchi", family: "Classic Remakes" },
-  { slug: "connection20", name: "Tamagotchi Connection 20th Anniversary", family: "Classic Remakes", generation: "Connection 20th Anniversary" },
+  { slug: "connection20", name: "Tamagotchi Connection 20th Anniversary", family: "Classic Remakes" },
   { slug: "arukotchi", name: "Arukotchi", family: "Others" },
   { slug: "tamawalkie", name: "TamaWalkie", family: "Others" },
 ];
