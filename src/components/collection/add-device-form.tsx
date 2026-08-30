@@ -14,6 +14,7 @@ import { PhotoFrameEditor } from "@/components/collection/photo-frame-editor";
 import { FramedImage } from "@/components/ui/framed-image";
 import { uploadImage } from "@/lib/upload-image";
 import { createDeviceModelOption } from "@/lib/create-device-model";
+import { useShellOptions } from "@/hooks/use-shell-options";
 import {
   DEFAULT_PHOTO_FRAME,
   buildPhotoFramesForSave,
@@ -34,6 +35,9 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [deviceModels, setDeviceModels] = useState(initialModels);
   const [deviceModelId, setDeviceModelId] = useState<string>();
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
+  const [shellId, setShellId] = useState<string>();
+  const [newShellName, setNewShellName] = useState<string>();
+  const { shellOptions, loadingShells, createShell } = useShellOptions(deviceModelId);
   const [primaryPhoto, setPrimaryPhoto] = useState<string>();
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
   const [photoFrames, setPhotoFrames] = useState<DevicePhotoFrames>({});
@@ -52,7 +56,13 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  const resetShellSelection = () => {
+    setShellId(undefined);
+    setNewShellName(undefined);
+  };
+
   const handleDeviceChange = (value: string, isNew?: boolean, label?: string) => {
+    resetShellSelection();
     if (isNew && label) {
       setDeviceModelId(undefined);
       setNewDeviceModelName(label);
@@ -82,8 +92,33 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
     );
     setDeviceModelId(created.value);
     setNewDeviceModelName(undefined);
+    resetShellSelection();
     return created;
   };
+
+  const handleShellChange = (value: string, isNew?: boolean, label?: string) => {
+    if (isNew && label) {
+      setShellId(undefined);
+      setNewShellName(label);
+    } else {
+      setShellId(value);
+      setNewShellName(undefined);
+    }
+  };
+
+  const handleCreateShell = async (label: string) => {
+    if (!deviceModelId) {
+      setNewShellName(label);
+      return null;
+    }
+    const created = await createShell(label);
+    if (!created) return null;
+    setShellId(created.value);
+    setNewShellName(undefined);
+    return created;
+  };
+
+  const shellFieldEnabled = Boolean(deviceModelId || newDeviceModelName);
 
   const updatePrimaryFrame = (frame: PhotoFrame) => {
     setPhotoFrames((current) => ({ ...current, primary: frame }));
@@ -165,6 +200,8 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
         body: JSON.stringify({
           deviceModelId,
           newDeviceModelName,
+          shellId,
+          newShellName,
           primaryPhoto,
           additionalPhotos,
           photoFrames: framesToSave,
@@ -343,6 +380,29 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
             />
             <p className="text-xs text-stone-500">
               Type a name and press Enter to add a new device type to your library.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Shell</Label>
+            <CreatableCombobox
+              options={shellOptions}
+              value={shellId}
+              pendingLabel={newShellName}
+              onValueChange={handleShellChange}
+              onCreateOption={deviceModelId ? handleCreateShell : undefined}
+              placeholder={
+                shellFieldEnabled
+                  ? loadingShells
+                    ? "Loading shells..."
+                    : "Type a shell name..."
+                  : "Select a device type first"
+              }
+              createLabel={(v) => `Add "${v}"`}
+              disabled={!shellFieldEnabled || loadingShells}
+            />
+            <p className="text-xs text-stone-500">
+              Optional. Type a shell colorway or press Enter to add a new one.
             </p>
           </div>
 

@@ -1,5 +1,5 @@
+import Link from "next/link";
 import { requireAuth } from "@/lib/session";
-import { DeviceTypesManager } from "@/components/settings/device-types-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -10,7 +10,7 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       <h1 className="mb-2 text-3xl font-bold">Settings</h1>
       <p className="mb-8 text-stone-500">
-        Manage your account, device types, and collection data.
+        Manage your account and collection data.
       </p>
 
       <Card className="mb-6">
@@ -25,13 +25,15 @@ export default async function SettingsPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Device Types</CardTitle>
+          <CardTitle>Library Management</CardTitle>
         </CardHeader>
-        <CardContent className="min-w-0">
-          <p className="mb-4 text-sm text-stone-500">
-            Add, rename, or remove device types used when building your collection.
+        <CardContent className="space-y-3">
+          <p className="text-sm text-stone-500">
+            Device types and shells now live in their own management area.
           </p>
-          <DeviceTypesManager />
+          <Button variant="outline" asChild>
+            <Link href="/manage">Open Manage Library</Link>
+          </Button>
         </CardContent>
       </Card>
 
