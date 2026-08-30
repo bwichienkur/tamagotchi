@@ -9,8 +9,7 @@ import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
 import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content";
 import { ConditionBadge } from "@/components/collection/condition-badge";
-import { EditDeviceButton } from "@/components/collection/edit-device-button";
-import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
+import { DeviceActionsMenu } from "@/components/collection/device-actions-menu";
 import { Button } from "@/components/ui/button";
 import { FramedImage } from "@/components/ui/framed-image";
 import { RemoteImage } from "@/components/ui/remote-image";
@@ -60,7 +59,10 @@ export default async function OwnedDevicePage({
     {
       id: "condition",
       title: "Condition",
-      content: `<p>Condition: ${getConditionLabel(device.conditionBadge)}</p>
+      content:
+        device.conditionBadge === "NONE"
+          ? `<p>Working status: ${device.workingStatus.replace("_", " ")}</p>`
+          : `<p>Condition: ${getConditionLabel(device.conditionBadge)}</p>
         ${device.conditionNotes ? `<p>${device.conditionNotes}</p>` : ""}
         <p>Working status: ${device.workingStatus.replace("_", " ")}</p>`,
     },
@@ -92,7 +94,9 @@ export default async function OwnedDevicePage({
   const infoboxFields = [
     { label: "Device", value: device.deviceModel.name, href: `/devices/${device.deviceModel.slug}` },
     { label: "Shell", value: shellName },
-    { label: "Condition", value: getConditionLabel(device.conditionBadge) },
+    ...(device.conditionBadge !== "NONE"
+      ? [{ label: "Condition", value: getConditionLabel(device.conditionBadge) }]
+      : []),
     { label: "Purchased", value: formatDate(device.purchaseDate) },
     { label: "Region", value: device.shell?.region ?? "—" },
     { label: "Working", value: device.workingStatus.replace("_", " ") },
@@ -135,10 +139,7 @@ export default async function OwnedDevicePage({
             </Button>
           </Link>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <EditDeviceButton slug={device.slug} label="Edit device" />
-          <RemoveDeviceButton slug={device.slug} />
-        </div>
+        <DeviceActionsMenu slug={device.slug} />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">

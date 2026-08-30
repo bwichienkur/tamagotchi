@@ -4,8 +4,7 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { memo, useState } from "react";
 import { ConditionBadge } from "@/components/collection/condition-badge";
-import { EditDeviceButton } from "@/components/collection/edit-device-button";
-import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
+import { DeviceActionsMenu } from "@/components/collection/device-actions-menu";
 import { FramedImage } from "@/components/ui/framed-image";
 import { cn } from "@/lib/utils";
 import {
@@ -95,9 +94,8 @@ export const CollectionCard = memo(function CollectionCard({
                 </div>
               </div>
             )}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <EditDeviceButton slug={device.slug} label="Edit device" />
-              <RemoveDeviceButton slug={device.slug} size="sm" />
+            <div className="mt-3 flex justify-end">
+              <DeviceActionsMenu slug={device.slug} />
             </div>
           </div>
         </div>
@@ -125,13 +123,6 @@ export const CollectionCard = memo(function CollectionCard({
             <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
           </div>
         )}
-        <div className="absolute left-5 top-5 z-10">
-          <EditDeviceButton
-            slug={device.slug}
-            size="icon"
-            className="h-9 w-9 rounded-full border-white/90 bg-white/95 text-tama-cyan shadow-md hover:bg-white"
-          />
-        </div>
       </div>
       <div className="p-4 pt-3">
         <div className="flex items-start justify-between gap-2">
@@ -175,9 +166,8 @@ export const CollectionCard = memo(function CollectionCard({
             </div>
           </div>
         )}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3">
-          <EditDeviceButton slug={device.slug} label="Edit device" />
-          <RemoveDeviceButton slug={device.slug} size="sm" />
+        <div className="mt-3 flex justify-end border-t border-stone-100 pt-3">
+          <DeviceActionsMenu slug={device.slug} />
         </div>
       </div>
     </div>
