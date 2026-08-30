@@ -163,30 +163,19 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
 
   const filename = `${randomBytes(16).toString("hex")}${extensionFor(file, mimeType)}`;
 
-  // On Vercel, blob is often misconfigured while DB fallback works reliably.
-  if (process.env.VERCEL) {
-    try {
-      return await saveToDatabase(buffer, userId, filename, mimeType);
-    } catch (dbError) {
-      console.error("Database upload failed, trying blob:", dbError);
-      if (hasBlobStorage()) {
-        try {
-          return await saveToBlob(buffer, filename, mimeType);
-        } catch (blobError) {
-          console.error("Blob upload also failed:", blobError);
-        }
-      }
-      throw dbError;
-    }
-  }
-
   if (hasBlobStorage()) {
     try {
       return await saveToBlob(buffer, filename, mimeType);
     } catch (error) {
       console.error("Blob upload failed, falling back to database:", error);
-      return saveToDatabase(buffer, userId, filename, mimeType);
+      if (!process.env.VERCEL) {
+        throw error instanceof Error ? error : new Error("Blob upload failed.");
+      }
     }
+  }
+
+  if (process.env.VERCEL) {
+    return saveToDatabase(buffer, userId, filename, mimeType);
   }
 
   const uploadDir = path.join(process.cwd(), "public", "uploads");
