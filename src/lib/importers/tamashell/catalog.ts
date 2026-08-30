@@ -49,7 +49,7 @@ export const TAMASHELL_CATALOG: TamaShellCatalogEntry[] = [
   { slug: "tama4u", name: "Tamagotchi 4U", family: "Modern" },
   { slug: "4uplus", name: "Tamagotchi 4U+", family: "Modern" },
   { slug: "mix", name: "Tamagotchi m!x", family: "Modern" },
-  { slug: "licensed", name: "Licensed Tamagotchi Nanos", family: "Modern" },
+  { slug: "licensed", name: "Tamagotchi Nanos", family: "Modern" },
   { slug: "meets", name: "Tamagotchi Meets / On", family: "Modern" },
   { slug: "pix", name: "Tamagotchi Pix", family: "Modern" },
   { slug: "smart", name: "Tamagotchi Smart", family: "Modern" },
