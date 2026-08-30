@@ -1,12 +1,16 @@
 "use client";
 
+import { prepareImageForUpload } from "@/lib/prepare-image-upload";
+
 /**
  * Upload an image via the server upload endpoint.
- * Server handles Vercel Blob (when configured) with database fallback.
+ * iPhone HEIC/HEIF photos are converted to JPEG in the browser first.
  */
 export async function uploadImage(file: File): Promise<string> {
+  const prepared = await prepareImageForUpload(file);
+
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", prepared);
 
   const res = await fetch("/api/upload", {
     method: "POST",
