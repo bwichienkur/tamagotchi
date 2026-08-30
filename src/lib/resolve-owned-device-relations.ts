@@ -1,0 +1,66 @@
+import { prisma } from "@/lib/prisma";
+import { createSlug } from "@/lib/slug";
+import type { OwnedDeviceInput } from "@/lib/owned-device-schema";
+
+export async function resolveDeviceModelId(
+  data: Pick<OwnedDeviceInput, "deviceModelId" | "newDeviceModelName">
+): Promise<string | undefined> {
+  let deviceModelId = data.deviceModelId;
+
+  if (data.newDeviceModelName) {
+    const slug = createSlug(data.newDeviceModelName);
+    const existing = await prisma.deviceModel.findUnique({ where: { slug } });
+    if (existing) {
+      deviceModelId = existing.id;
+    } else {
+      const modernFamily = await prisma.deviceFamily.findFirst({
+        where: { slug: "modern" },
+      });
+      const familyId =
+        modernFamily?.id ??
+        (
+          await prisma.deviceFamily.create({
+            data: { name: "Other", slug: "other", sortOrder: 99 },
+          })
+        ).id;
+
+      const created = await prisma.deviceModel.create({
+        data: {
+          name: data.newDeviceModelName,
+          slug,
+          familyId,
+        },
+      });
+      deviceModelId = created.id;
+    }
+  }
+
+  return deviceModelId;
+}
+
+export async function resolveShellId(
+  deviceModelId: string,
+  data: Pick<OwnedDeviceInput, "shellId" | "newShellName">
+): Promise<string | null | undefined> {
+  if (data.shellId === null) return null;
+  if (data.shellId) return data.shellId;
+
+  if (data.newShellName) {
+    const shellSlug = createSlug(data.newShellName);
+    const existingShell = await prisma.shell.findUnique({
+      where: { deviceModelId_slug: { deviceModelId, slug: shellSlug } },
+    });
+    if (existingShell) return existingShell.id;
+
+    const createdShell = await prisma.shell.create({
+      data: {
+        deviceModelId,
+        name: data.newShellName,
+        slug: shellSlug,
+      },
+    });
+    return createdShell.id;
+  }
+
+  return undefined;
+}
