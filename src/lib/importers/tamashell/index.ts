@@ -4,15 +4,18 @@ import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
+  isSingleDeviceTamaShellPage,
   type TamaShellCatalogEntry,
   type TamaShellFamily,
 } from "./catalog";
 import {
   buildSectionDeviceName,
   fetchTamaShellPage,
+  flattenSectionShells,
   parseShellSectionsFromHtml,
   parseShellsFromHtml,
 } from "./scraper";
+import { importMissingTamaShellShells } from "./import-shells";
 
 export interface TamaShellDevice {
   name: string;
@@ -250,6 +253,22 @@ export class TamaShellImporter {
         await this.respectRateLimit();
         const html = await fetchTamaShellPage(`/${entry.slug}`);
         const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
+
+        if (sections && isSingleDeviceTamaShellPage(entry)) {
+          const deviceModel = await this.findOrCreateDeviceModel({
+            name: entry.name,
+            family: entry.family,
+            modelSlug: entry.slug,
+          });
+          devices++;
+
+          const flatShells = flattenSectionShells(sections);
+          const imported = await importMissingTamaShellShells(deviceModel.id, flatShells, {
+            storeSectionInWave: true,
+          });
+          shells += imported;
+          continue;
+        }
 
         if (sections) {
           for (const section of sections) {

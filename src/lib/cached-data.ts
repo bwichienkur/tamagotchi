@@ -21,7 +21,7 @@ export const getDeviceFamiliesWithModels = unstable_cache(
       },
     }),
   ["device-families-with-models"],
-  { revalidate: 3600, tags: ["device-catalog"] }
+  { revalidate: 60, tags: ["device-catalog"] }
 );
 
 export const getAllDeviceModels = unstable_cache(
@@ -31,7 +31,7 @@ export const getAllDeviceModels = unstable_cache(
       select: { id: true, name: true },
     }),
   ["all-device-models"],
-  { revalidate: 3600, tags: ["device-catalog"] }
+  { revalidate: 60, tags: ["device-catalog"] }
 );
 
 export const getAllFamilies = unstable_cache(
@@ -41,5 +41,5 @@ export const getAllFamilies = unstable_cache(
       select: { id: true, name: true, slug: true },
     }),
   ["all-families"],
-  { revalidate: 3600, tags: ["device-catalog"] }
+  { revalidate: 60, tags: ["device-catalog"] }
 );

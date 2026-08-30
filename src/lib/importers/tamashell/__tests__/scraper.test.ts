@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildSectionDeviceName,
+  flattenSectionShells,
   parseShellSectionsFromHtml,
   parseShellsFromHtml,
 } from "@/lib/importers/tamashell/scraper";
@@ -123,5 +124,23 @@ describe("parseShellSectionsFromHtml", () => {
     expect(sections).toHaveLength(2);
     expect(sections?.[0].sectionLabel).toBe("Hello Kitty");
     expect(sections?.[1].sectionLabel).toBe("One Piece");
+  });
+
+  it("flattens section shells with section labels", () => {
+    const sections = [
+      {
+        sectionLabel: "Hello Kitty",
+        shells: [{ name: "Red Bow", sourceUrl: "https://www.tamashell.com/licensed", deviceName: "Tamagotchi Nanos" }],
+      },
+      {
+        sectionLabel: null,
+        shells: [{ name: "Blue", sourceUrl: "https://www.tamashell.com/licensed", deviceName: "Tamagotchi Nanos" }],
+      },
+    ];
+
+    const flat = flattenSectionShells(sections);
+    expect(flat).toHaveLength(2);
+    expect(flat[0].sectionLabel).toBe("Hello Kitty");
+    expect(flat[1].sectionLabel).toBeNull();
   });
 });
