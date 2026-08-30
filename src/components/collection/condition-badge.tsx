@@ -15,7 +15,9 @@ interface ConditionBadgeProps {
 }
 
 export function ConditionBadge({ condition, className }: ConditionBadgeProps) {
-  const isNoBox = condition === "NONE";
+  if (condition === "NONE") {
+    return null;
+  }
 
   return (
     <TooltipProvider>
@@ -24,9 +26,7 @@ export function ConditionBadge({ condition, className }: ConditionBadgeProps) {
           <span
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1",
-              isNoBox
-                ? "bg-stone-100 text-stone-600 ring-stone-200"
-                : "bg-gradient-to-r from-tama-mint/40 to-tama-cyan/30 text-emerald-800 ring-tama-mint/60",
+              "bg-gradient-to-r from-tama-mint/40 to-tama-cyan/30 text-emerald-800 ring-tama-mint/60",
               className
             )}
           >
