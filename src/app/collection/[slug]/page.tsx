@@ -10,6 +10,7 @@ import { WikiSectionsContent, WikiSection } from "@/components/wiki/wiki-content
 import { ConditionBadge } from "@/components/collection/condition-badge";
 import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
 import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 import { RemoteImage } from "@/components/ui/remote-image";
 
 export default async function OwnedDevicePage({
@@ -129,7 +130,15 @@ export default async function OwnedDevicePage({
             </Button>
           </Link>
         </div>
-        <RemoveDeviceButton slug={device.slug} />
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/collection/${device.slug}/edit`}>
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Link>
+          </Button>
+          <RemoveDeviceButton slug={device.slug} />
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
