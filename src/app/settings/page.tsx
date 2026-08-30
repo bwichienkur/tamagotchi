@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
+import { DeviceTypesManager } from "@/components/settings/device-types-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -7,8 +7,11 @@ export default async function SettingsPage() {
   const session = await requireAuth();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <h1 className="mb-8 text-3xl font-bold">Settings</h1>
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <h1 className="mb-2 text-3xl font-bold">Settings</h1>
+      <p className="mb-8 text-stone-500">
+        Manage your account, device types, and collection data.
+      </p>
 
       <Card className="mb-6">
         <CardHeader>
@@ -17,6 +20,20 @@ export default async function SettingsPage() {
         <CardContent>
           <p className="text-sm text-stone-500">Signed in as</p>
           <p className="font-medium">{session.user.email}</p>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Device Types</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-5 text-sm text-stone-500">
+            Add, rename, or remove device types used when building your collection.
+            Types in use by collection items, shells, or wiki pages cannot be removed until
+            those links are cleared.
+          </p>
+          <DeviceTypesManager />
         </CardContent>
       </Card>
 

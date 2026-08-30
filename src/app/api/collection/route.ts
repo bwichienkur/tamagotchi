@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug, createUniqueSlug } from "@/lib/slug";
@@ -12,6 +13,27 @@ const createOwnedDeviceSchema = z.object({
   nickname: z.string().optional(),
   primaryPhoto: z.string().optional(),
   additionalPhotos: z.array(z.string()).optional(),
+  photoFrames: z
+    .object({
+      primary: z
+        .object({
+          x: z.number().min(0).max(100),
+          y: z.number().min(0).max(100),
+          zoom: z.number().min(1).max(3),
+        })
+        .optional(),
+      additional: z
+        .record(
+          z.string(),
+          z.object({
+            x: z.number().min(0).max(100),
+            y: z.number().min(0).max(100),
+            zoom: z.number().min(1).max(3),
+          })
+        )
+        .optional(),
+    })
+    .optional(),
   conditionBadge: z.enum(["NONE", "NIB", "IOB"]).default("NONE"),
   showMoreInfo: z.string().optional(),
   purchaseDate: z.string().optional(),
@@ -124,6 +146,7 @@ export async function POST(request: NextRequest) {
       nickname: data.nickname,
       primaryPhoto: data.primaryPhoto,
       additionalPhotos: data.additionalPhotos ?? [],
+      photoFrames: data.photoFrames as Prisma.InputJsonValue | undefined,
       conditionBadge: data.conditionBadge,
       showMoreInfo: data.showMoreInfo,
       purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : undefined,

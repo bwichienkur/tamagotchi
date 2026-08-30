@@ -15,6 +15,7 @@ interface CollectionDevice {
   slug: string;
   nickname?: string | null;
   primaryPhoto?: string | null;
+  photoFrames?: unknown;
   conditionBadge: "NONE" | "NIB" | "IOB";
   showMoreInfo?: string | null;
   favorite: boolean;

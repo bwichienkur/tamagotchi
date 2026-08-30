@@ -5,28 +5,31 @@ import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
 import { getOrCreateDefaultFamilyId } from "@/lib/device-family";
 
-const createDeviceModelSchema = z.object({
+const createDeviceTypeSchema = z.object({
   name: z.string().trim().min(1).max(120),
 });
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q") ?? "";
+export async function GET() {
+  const session = await getApiSession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const models = await prisma.deviceModel.findMany({
-    where: q
-      ? {
-          OR: [{ name: { contains: q, mode: "insensitive" } }],
-        }
-      : undefined,
+  const deviceTypes = await prisma.deviceModel.findMany({
     include: {
-      family: true,
-      _count: { select: { shells: true } },
+      family: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          ownedDevices: true,
+          shells: true,
+          wikiPages: true,
+        },
+      },
     },
-    orderBy: [{ family: { sortOrder: "asc" } }, { releaseYear: "asc" }],
+    orderBy: { name: "asc" },
   });
 
-  return NextResponse.json(models);
+  return NextResponse.json(deviceTypes);
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const parsed = createDeviceModelSchema.safeParse(body);
+  const parsed = createDeviceTypeSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
@@ -48,7 +51,16 @@ export async function POST(request: NextRequest) {
     where: {
       OR: [{ slug }, { name: { equals: name, mode: "insensitive" } }],
     },
-    select: { id: true, name: true, slug: true },
+    include: {
+      family: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          ownedDevices: true,
+          shells: true,
+          wikiPages: true,
+        },
+      },
+    },
   });
 
   if (existing) {
@@ -61,7 +73,16 @@ export async function POST(request: NextRequest) {
       slug,
       familyId: await getOrCreateDefaultFamilyId(),
     },
-    select: { id: true, name: true, slug: true },
+    include: {
+      family: { select: { id: true, name: true } },
+      _count: {
+        select: {
+          ownedDevices: true,
+          shells: true,
+          wikiPages: true,
+        },
+      },
+    },
   });
 
   return NextResponse.json(created, { status: 201 });

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createSlug } from "@/lib/slug";
+import { getOrCreateDefaultFamilyId } from "@/lib/device-family";
 import type { OwnedDeviceInput } from "@/lib/owned-device-schema";
 
 export async function resolveDeviceModelId(
@@ -13,22 +14,11 @@ export async function resolveDeviceModelId(
     if (existing) {
       deviceModelId = existing.id;
     } else {
-      const modernFamily = await prisma.deviceFamily.findFirst({
-        where: { slug: "modern" },
-      });
-      const familyId =
-        modernFamily?.id ??
-        (
-          await prisma.deviceFamily.create({
-            data: { name: "Other", slug: "other", sortOrder: 99 },
-          })
-        ).id;
-
       const created = await prisma.deviceModel.create({
         data: {
           name: data.newDeviceModelName,
           slug,
-          familyId,
+          familyId: await getOrCreateDefaultFamilyId(),
         },
       });
       deviceModelId = created.id;

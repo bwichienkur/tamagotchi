@@ -6,14 +6,19 @@ import { memo, useState } from "react";
 import { ConditionBadge } from "@/components/collection/condition-badge";
 import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { RemoveDeviceButton } from "@/components/collection/remove-device-button";
-import { RemoteImage } from "@/components/ui/remote-image";
+import { FramedImage } from "@/components/ui/framed-image";
 import { cn } from "@/lib/utils";
+import {
+  getPrimaryPhotoFrame,
+  parsePhotoFrames,
+} from "@/lib/photo-frame";
 
 export interface CollectionCardData {
   id: string;
   slug: string;
   nickname?: string | null;
   primaryPhoto?: string | null;
+  photoFrames?: unknown;
   conditionBadge: "NONE" | "NIB" | "IOB";
   showMoreInfo?: string | null;
   favorite: boolean;
@@ -34,6 +39,7 @@ export const CollectionCard = memo(function CollectionCard({
   const [expanded, setExpanded] = useState(false);
   const shellName = device.shell?.name ?? device.customShellName ?? "Unknown shell";
   const imageSrc = device.primaryPhoto ?? "/placeholder-device.svg";
+  const primaryFrame = getPrimaryPhotoFrame(parsePhotoFrames(device.photoFrames));
 
   if (view === "list") {
     return (
@@ -41,9 +47,10 @@ export const CollectionCard = memo(function CollectionCard({
         <div className="flex gap-4">
           <Link href={`/collection/${device.slug}`} className="shrink-0">
             <div className="relative h-24 w-24 overflow-hidden rounded-2xl bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 ring-2 ring-white">
-              <RemoteImage
+              <FramedImage
                 src={imageSrc}
                 alt={device.deviceModel.name}
+                frame={primaryFrame}
                 fill
                 sizes="96px"
               />
@@ -103,9 +110,10 @@ export const CollectionCard = memo(function CollectionCard({
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-3">
         <Link href={`/collection/${device.slug}`} className="block h-full w-full">
           <div className="relative h-full w-full overflow-hidden rounded-2xl ring-2 ring-white/90 shadow-inner">
-            <RemoteImage
+            <FramedImage
               src={imageSrc}
               alt={device.deviceModel.name}
+              frame={primaryFrame}
               fill
               className="transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, 25vw"
