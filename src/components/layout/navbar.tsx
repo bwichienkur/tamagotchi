@@ -7,7 +7,6 @@ import {
   Package,
   Library,
   BookOpen,
-  Shell,
   Plus,
   Settings,
   Menu,
@@ -25,7 +24,6 @@ const NAV_ITEMS = [
   { href: "/collection", label: "My Collection", icon: Package },
   { href: "/devices", label: "Device Library", icon: Library },
   { href: "/wiki", label: "Wiki", icon: BookOpen },
-  { href: "/shells", label: "Shell Catalog", icon: Shell },
 ];
 
 interface NavbarProps {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -23,9 +23,6 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [deviceModels, setDeviceModels] = useState(initialModels);
   const [deviceModelId, setDeviceModelId] = useState<string>();
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
-  const [shellId, setShellId] = useState<string>();
-  const [newShellName, setNewShellName] = useState<string>();
-  const [shellOptions, setShellOptions] = useState<ComboboxOption[]>([]);
   const [primaryPhoto, setPrimaryPhoto] = useState<string>();
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
   const [conditionBadge, setConditionBadge] = useState<"NONE" | "NIB" | "IOB">("NONE");
@@ -42,37 +39,13 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  const loadShells = useCallback(async (modelId: string) => {
-    const res = await fetch(`/api/shells?deviceModelId=${modelId}`);
-    const shells = await res.json();
-    setShellOptions(
-      shells.map((s: { id: string; name: string }) => ({
-        value: s.id,
-        label: s.name,
-      }))
-    );
-  }, []);
-
   const handleDeviceChange = (value: string, isNew?: boolean, label?: string) => {
     if (isNew && label) {
       setDeviceModelId(undefined);
       setNewDeviceModelName(label);
-      setShellOptions([]);
-      setShellId(undefined);
     } else {
       setDeviceModelId(value);
       setNewDeviceModelName(undefined);
-      loadShells(value);
-    }
-  };
-
-  const handleShellChange = (value: string, isNew?: boolean, label?: string) => {
-    if (isNew && label) {
-      setShellId(undefined);
-      setNewShellName(label);
-    } else {
-      setShellId(value);
-      setNewShellName(undefined);
     }
   };
 
@@ -113,8 +86,6 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
         body: JSON.stringify({
           deviceModelId,
           newDeviceModelName,
-          shellId,
-          newShellName,
           primaryPhoto,
           additionalPhotos,
           conditionBadge,
@@ -212,19 +183,6 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
               createLabel={(v) => `Create "${v}"`}
             />
           </div>
-
-          {(deviceModelId || newDeviceModelName) && (
-            <div className="space-y-2">
-              <Label>Shell</Label>
-              <CreatableCombobox
-                options={shellOptions}
-                value={shellId}
-                onValueChange={handleShellChange}
-                placeholder="Search shell or create custom..."
-                createLabel={(v) => `Create "${v}"`}
-              />
-            </div>
-          )}
 
           <div className="space-y-2">
             <Label>Condition</Label>

@@ -9,6 +9,7 @@ const protectedPrefixes = [
   "/collection/",
   "/admin/",
   "/api/collection",
+  "/api/collection/profile",
   "/api/upload",
   "/api/uploads",
   "/api/wishlist",

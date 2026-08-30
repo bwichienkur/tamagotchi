@@ -6,7 +6,12 @@ import { withDatabase } from "@/lib/db-query";
 export default async function CollectionPage() {
   const session = await requireAuth();
 
-  const { devices, families, deviceModels } = await withDatabase(async () => {
+  const { devices, families, deviceModels, collectionImage } = await withDatabase(async () => {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { collectionImage: true },
+    });
+
     const devices = await prisma.ownedDevice.findMany({
       where: { userId: session.user.id },
       include: {
@@ -22,7 +27,7 @@ export default async function CollectionPage() {
       select: { id: true, name: true },
     });
 
-    return { devices, families, deviceModels };
+    return { devices, families, deviceModels, collectionImage: user?.collectionImage };
   });
 
   const stats = {
@@ -38,6 +43,7 @@ export default async function CollectionPage() {
       families={families}
       deviceModels={deviceModels}
       stats={stats}
+      collectionImage={collectionImage}
     />
   );
 }

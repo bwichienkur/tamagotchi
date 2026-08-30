@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Grid3X3, List, Plus } from "lucide-react";
 import { CollectionCard } from "@/components/collection/collection-card";
+import { CollectionHero } from "@/components/collection/collection-hero";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ interface CollectionPageClientProps {
   families: Array<{ id: string; name: string }>;
   deviceModels: Array<{ id: string; name: string }>;
   stats: { total: number; deviceTypes: number; shells: number; nib: number };
+  collectionImage?: string | null;
 }
 
 type SortOption =
@@ -51,6 +53,7 @@ export function CollectionPageClient({
   families,
   deviceModels,
   stats,
+  collectionImage,
 }: CollectionPageClientProps) {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
@@ -141,6 +144,8 @@ export function CollectionPageClient({
           </Link>
         }
       />
+
+      <CollectionHero initialImage={collectionImage} />
 
       <div className="cute-card mb-6 space-y-4 p-4">
         <Input
