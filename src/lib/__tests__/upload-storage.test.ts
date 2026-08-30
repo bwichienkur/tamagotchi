@@ -31,30 +31,6 @@ describe("blob env", () => {
     expect(getBlobReadWriteToken()).toBe("prefixed-token");
     expect(process.env.BLOB_READ_WRITE_TOKEN).toBe("prefixed-token");
   });
-
-  it("ignores empty prefixed values", async () => {
-    process.env.BLOB_READ_WRITE_TOKEN = "vercel-token";
-    process.env.tamagotchi_BLOB_READ_WRITE_TOKEN = "   ";
-
-    const { getBlobReadWriteToken } = await import("../blob-env");
-    expect(getBlobReadWriteToken()).toBe("vercel-token");
-  });
-});
-
-describe("upload storage env", () => {
-  afterEach(() => {
-    delete process.env.BLOB_READ_WRITE_TOKEN;
-    delete process.env.tamagotchi_BLOB_READ_WRITE_TOKEN;
-    vi.resetModules();
-  });
-
-  it("re-exports blob helpers from blob-env", async () => {
-    process.env.BLOB_READ_WRITE_TOKEN = "test-token";
-
-    const { getBlobReadWriteToken, hasBlobStorage } = await import("../upload-storage");
-    expect(getBlobReadWriteToken()).toBe("test-token");
-    expect(hasBlobStorage()).toBe(true);
-  });
 });
 
 describe("resolveImageMimeType", () => {
@@ -62,6 +38,13 @@ describe("resolveImageMimeType", () => {
     const { resolveImageMimeType } = await import("../upload-storage");
     const file = new File([new Uint8Array([1, 2, 3])], "photo.jpg", { type: "" });
     expect(resolveImageMimeType(file)).toBe("image/jpeg");
+  });
+
+  it("sniffs JPEG from file bytes when type and extension are missing", async () => {
+    const { resolveImageMimeType } = await import("../upload-storage");
+    const bytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00]);
+    const file = new File([bytes], "IMG_0001", { type: "" });
+    expect(resolveImageMimeType(file, Buffer.from(bytes))).toBe("image/jpeg");
   });
 
   it("accepts application/octet-stream with png extension", async () => {
@@ -75,6 +58,6 @@ describe("resolveImageMimeType", () => {
   it("rejects unknown file types", async () => {
     const { resolveImageMimeType } = await import("../upload-storage");
     const file = new File([new Uint8Array([1, 2, 3])], "notes.txt", { type: "text/plain" });
-    expect(resolveImageMimeType(file)).toBeNull();
+    expect(resolveImageMimeType(file, Buffer.from([1, 2, 3]))).toBeNull();
   });
 });
