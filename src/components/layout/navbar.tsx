@@ -77,13 +77,19 @@ export function Navbar() {
                   <Plus className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" className="hidden sm:inline-flex" asChild>
+              <Button variant="ghost" size="icon" asChild>
                 <Link href="/settings" aria-label="Settings">
                   <Settings className="h-4 w-4" />
                 </Link>
               </Button>
               {user ? (
                 <div className="flex items-center gap-1">
+                  <Link
+                    href="/settings"
+                    className="hidden rounded-full px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-white/80 hover:text-stone-900 md:inline"
+                  >
+                    Settings
+                  </Link>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
                     {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
                   </div>
@@ -132,6 +138,21 @@ export function Navbar() {
                 {item.label}
               </Link>
             ))}
+            {user && (
+              <Link
+                href="/settings"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium",
+                  pathname.startsWith("/settings")
+                    ? "bg-tama-cyan/10 text-tama-cyan"
+                    : "text-stone-600"
+                )}
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
+            )}
           </nav>
         )}
       </header>
@@ -153,6 +174,18 @@ export function Navbar() {
               {item.label.split(" ")[0]}
             </Link>
           ))}
+          {user && (
+            <Link
+              href="/settings"
+              className={cn(
+                "flex flex-col items-center gap-0.5 px-2 py-1 text-[10px] font-medium",
+                pathname.startsWith("/settings") ? "text-tama-cyan" : "text-stone-400"
+              )}
+            >
+              <Settings className="h-5 w-5" />
+              Settings
+            </Link>
+          )}
         </div>
       </nav>
     </>
