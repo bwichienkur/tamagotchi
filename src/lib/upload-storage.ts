@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getBlobReadWriteToken, hasBlobStorage } from "@/lib/blob-env";
 import { normalizeUploadedImageBuffer } from "@/lib/heic-convert-server";
 import { isHeicBuffer } from "@/lib/heic";
-import { ensureUserUploadTable, isMissingTableError } from "@/lib/ensure-upload-storage";
+import { ensureUserUploadTable } from "@/lib/ensure-upload-storage";
 
 export { getBlobReadWriteToken, hasBlobStorage };
 
@@ -163,27 +163,29 @@ export async function saveUploadedImage(file: File, userId: string): Promise<str
 
   const filename = `${randomBytes(16).toString("hex")}${extensionFor(file, mimeType)}`;
 
+  // On Vercel, blob is often misconfigured while DB fallback works reliably.
+  if (process.env.VERCEL) {
+    try {
+      return await saveToDatabase(buffer, userId, filename, mimeType);
+    } catch (dbError) {
+      console.error("Database upload failed, trying blob:", dbError);
+      if (hasBlobStorage()) {
+        try {
+          return await saveToBlob(buffer, filename, mimeType);
+        } catch (blobError) {
+          console.error("Blob upload also failed:", blobError);
+        }
+      }
+      throw dbError;
+    }
+  }
+
   if (hasBlobStorage()) {
     try {
       return await saveToBlob(buffer, filename, mimeType);
     } catch (error) {
       console.error("Blob upload failed, falling back to database:", error);
-      if (!process.env.VERCEL) {
-        throw error instanceof Error ? error : new Error("Blob upload failed.");
-      }
-    }
-  }
-
-  if (process.env.VERCEL) {
-    try {
-      return await saveToDatabase(buffer, userId, filename, mimeType);
-    } catch (error) {
-      if (isMissingTableError(error)) {
-        throw new Error(
-          "Upload storage could not be initialized. Please try again in a moment."
-        );
-      }
-      throw error;
+      return saveToDatabase(buffer, userId, filename, mimeType);
     }
   }
 

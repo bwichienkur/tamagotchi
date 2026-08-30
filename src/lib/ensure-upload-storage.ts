@@ -1,18 +1,67 @@
+import pg from "pg";
+import { getMigrationDatabaseUrl } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
 
 let userUploadTableReady: boolean | null = null;
 
-export function isMissingTableError(error: unknown): boolean {
+export function isMissingUserUploadTableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
   return (
-    message.includes("userupload") ||
-    message.includes('relation "userupload" does not exist') ||
-    message.includes("does not exist")
+    message.includes("userupload") &&
+    (message.includes("does not exist") || message.includes("not exist"))
   );
 }
 
-/** Self-heal when a deploy skipped the UserUpload migration (common on first upload after deploy). */
+async function createUserUploadTableWithDirectConnection(): Promise<void> {
+  const connectionString = getMigrationDatabaseUrl();
+  if (!connectionString) {
+    throw new Error("Database is not configured for upload storage.");
+  }
+
+  const pool = new pg.Pool({
+    connectionString,
+    max: 1,
+    ssl:
+      connectionString.includes("sslmode=require") ||
+      connectionString.includes("neon.tech")
+        ? { rejectUnauthorized: false }
+        : undefined,
+  });
+
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "UserUpload" (
+        "id" TEXT NOT NULL,
+        "userId" TEXT NOT NULL,
+        "filename" TEXT NOT NULL,
+        "mimeType" TEXT NOT NULL,
+        "data" BYTEA NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "UserUpload_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS "UserUpload_userId_idx" ON "UserUpload"("userId");
+    `);
+
+    try {
+      await pool.query(`
+        ALTER TABLE "UserUpload"
+        ADD CONSTRAINT "UserUpload_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES "User"("id")
+        ON DELETE CASCADE ON UPDATE CASCADE;
+      `);
+    } catch {
+      // Constraint already exists.
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
+/** Self-heal when a deploy skipped the UserUpload migration. */
 export async function ensureUserUploadTable(): Promise<void> {
   if (userUploadTableReady) return;
 
@@ -21,35 +70,9 @@ export async function ensureUserUploadTable(): Promise<void> {
     userUploadTableReady = true;
     return;
   } catch (error) {
-    if (!isMissingTableError(error)) throw error;
+    if (!isMissingUserUploadTableError(error)) throw error;
   }
 
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS "UserUpload" (
-      "id" TEXT NOT NULL,
-      "userId" TEXT NOT NULL,
-      "filename" TEXT NOT NULL,
-      "mimeType" TEXT NOT NULL,
-      "data" BYTEA NOT NULL,
-      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT "UserUpload_pkey" PRIMARY KEY ("id")
-    );
-  `);
-
-  await prisma.$executeRawUnsafe(`
-    CREATE INDEX IF NOT EXISTS "UserUpload_userId_idx" ON "UserUpload"("userId");
-  `);
-
-  try {
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "UserUpload"
-      ADD CONSTRAINT "UserUpload_userId_fkey"
-      FOREIGN KEY ("userId") REFERENCES "User"("id")
-      ON DELETE CASCADE ON UPDATE CASCADE;
-    `);
-  } catch {
-    // Constraint already exists.
-  }
-
+  await createUserUploadTableWithDirectConnection();
   userUploadTableReady = true;
 }
