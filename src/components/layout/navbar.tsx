@@ -16,7 +16,7 @@ import { useSession, signOut } from "next-auth/react";
 import { GlobalSearch } from "@/components/search/global-search";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APP_NAME } from "@/lib/app-name";
 import { AppLogo } from "@/components/ui/app-logo";
 
@@ -31,8 +31,36 @@ const NAV_ITEMS = [
 export function Navbar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileInputFocused, setMobileInputFocused] = useState(false);
   const { data: session } = useSession();
   const user = session?.user;
+
+  useEffect(() => {
+    const isFormField = (element: EventTarget | null) =>
+      element instanceof HTMLElement &&
+      element.matches("input, textarea, select, [contenteditable='true']");
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (isFormField(event.target)) {
+        setMobileInputFocused(true);
+      }
+    };
+
+    const onFocusOut = () => {
+      window.setTimeout(() => {
+        if (!isFormField(document.activeElement)) {
+          setMobileInputFocused(false);
+        }
+      }, 100);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+    };
+  }, []);
 
   return (
     <>
@@ -159,7 +187,14 @@ export function Navbar() {
         )}
       </header>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/80 bg-white/90 shadow-[0_-4px_20px_-4px_rgba(78,205,196,0.15)] backdrop-blur-md md:hidden">
+      <nav
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-50 border-t border-white/80 bg-white/90 shadow-[0_-4px_20px_-4px_rgba(78,205,196,0.15)] backdrop-blur-md transition-transform duration-200 md:hidden",
+          "pb-[env(safe-area-inset-bottom)]",
+          mobileInputFocused && "pointer-events-none translate-y-full"
+        )}
+        aria-hidden={mobileInputFocused}
+      >
         <div className="flex items-center justify-around py-2">
           {NAV_ITEMS.map((item) => (
             <Link
