@@ -79,7 +79,7 @@ export function Navbar() {
                   <Plus className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button variant="ghost" size="icon" asChild>
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex" asChild>
                 <Link href="/settings" aria-label="Settings">
                   <Settings className="h-4 w-4" />
                 </Link>

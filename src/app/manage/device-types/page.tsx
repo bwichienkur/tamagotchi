@@ -1,10 +1,12 @@
 import { requireAuth } from "@/lib/session";
+import { getAllFamilies } from "@/lib/cached-data";
 import { ManageNav } from "@/components/manage/manage-nav";
 import { DeviceTypesManager } from "@/components/settings/device-types-manager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ManageDeviceTypesPage() {
   await requireAuth();
+  const families = await getAllFamilies();
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -20,7 +22,7 @@ export default async function ManageDeviceTypesPage() {
           <CardTitle>Device Type Library</CardTitle>
         </CardHeader>
         <CardContent className="min-w-0">
-          <DeviceTypesManager />
+          <DeviceTypesManager families={families} />
         </CardContent>
       </Card>
     </div>

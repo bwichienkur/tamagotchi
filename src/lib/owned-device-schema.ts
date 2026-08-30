@@ -14,6 +14,7 @@ const devicePhotoFramesSchema = z.object({
 export const ownedDeviceInputSchema = z.object({
   deviceModelId: z.string().optional(),
   newDeviceModelName: z.string().optional(),
+  familyId: z.string().optional(),
   shellId: z.string().optional().nullable(),
   newShellName: z.string().optional(),
   nickname: z.string().optional().nullable(),

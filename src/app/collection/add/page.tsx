@@ -5,10 +5,16 @@ import { requireAuth } from "@/lib/session";
 export default async function AddDevicePage() {
   await requireAuth();
 
-  const models = await prisma.deviceModel.findMany({
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  const [models, families] = await Promise.all([
+    prisma.deviceModel.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, familyId: true },
+    }),
+    prisma.deviceFamily.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
@@ -19,7 +25,12 @@ export default async function AddDevicePage() {
         </p>
       </div>
       <AddDeviceForm
-        deviceModels={models.map((m) => ({ value: m.id, label: m.name }))}
+        deviceModels={models.map((m) => ({
+          value: m.id,
+          label: m.name,
+          familyId: m.familyId,
+        }))}
+        families={families}
       />
     </div>
   );

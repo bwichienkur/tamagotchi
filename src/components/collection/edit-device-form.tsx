@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CreatableCombobox, ComboboxOption } from "@/components/forms/creatable-combobox";
+import { CreatableCombobox, DeviceModelComboboxOption } from "@/components/forms/creatable-combobox";
 import { PhotoFrameEditor } from "@/components/collection/photo-frame-editor";
 import { FramedImage } from "@/components/ui/framed-image";
 import { uploadImage } from "@/lib/upload-image";
@@ -31,6 +31,7 @@ import { getConditionLabel } from "@/lib/condition-labels";
 export interface EditDeviceInitialValues {
   slug: string;
   deviceModelId: string;
+  deviceModelFamilyId?: string | null;
   shellId?: string | null;
   shellName?: string | null;
   nickname: string | null;
@@ -44,23 +45,35 @@ export interface EditDeviceInitialValues {
   purchasePrice: number | null;
   purchaseCurrency: string | null;
   purchasedFrom: string | null;
-  serialNumber: string | null;
   workingStatus: "WORKING" | "NOT_WORKING" | "UNTESTED" | "FOR_PARTS";
   favorite: boolean;
   currentlyRunning: boolean;
   notes: string | null;
 }
 
+interface FamilyOption {
+  id: string;
+  name: string;
+}
+
 interface EditDeviceFormProps {
-  deviceModels: ComboboxOption[];
+  deviceModels: DeviceModelComboboxOption[];
+  families: FamilyOption[];
   device: EditDeviceInitialValues;
 }
 
-export function EditDeviceForm({ deviceModels: initialModels, device }: EditDeviceFormProps) {
+export function EditDeviceForm({
+  deviceModels: initialModels,
+  families,
+  device,
+}: EditDeviceFormProps) {
   const router = useRouter();
   const [deviceModels, setDeviceModels] = useState(initialModels);
   const [deviceModelId, setDeviceModelId] = useState(device.deviceModelId);
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
+  const [familyId, setFamilyId] = useState(
+    device.deviceModelFamilyId ?? families[0]?.id ?? ""
+  );
   const [shellId, setShellId] = useState(device.shellId ?? undefined);
   const [newShellName, setNewShellName] = useState(
     !device.shellId && device.shellName ? device.shellName : undefined
@@ -83,13 +96,14 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
     device.purchasePrice != null ? String(device.purchasePrice) : ""
   );
   const [purchasedFrom, setPurchasedFrom] = useState(device.purchasedFrom ?? "");
-  const [serialNumber, setSerialNumber] = useState(device.serialNumber ?? "");
   const [workingStatus, setWorkingStatus] = useState(device.workingStatus);
   const [favorite, setFavorite] = useState(device.favorite);
   const [currentlyRunning, setCurrentlyRunning] = useState(device.currentlyRunning);
   const [notes, setNotes] = useState(device.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const isCreatingDeviceType = Boolean(newDeviceModelName);
 
   const resetShellSelection = () => {
     setShellId(undefined);
@@ -104,18 +118,26 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
     } else {
       setDeviceModelId(value);
       setNewDeviceModelName(undefined);
+      const selected = deviceModels.find((model) => model.value === value);
+      if (selected?.familyId) {
+        setFamilyId(selected.familyId);
+      }
       if (label) {
         setDeviceModels((current) =>
           current.some((model) => model.value === value)
             ? current
-            : [...current, { value, label }]
+            : [...current, { value, label, familyId: selected?.familyId }]
         );
       }
     }
   };
 
   const handleCreateDeviceModel = async (label: string) => {
-    const created = await createDeviceModelOption(label);
+    if (!familyId) {
+      toast.error("Select a family for the device type");
+      return null;
+    }
+    const created = await createDeviceModelOption(label, familyId);
     if (!created) {
       toast.error("Failed to save device type");
       return null;
@@ -123,7 +145,9 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
     setDeviceModels((current) =>
       current.some((model) => model.value === created.value)
         ? current
-        : [...current, created].sort((a, b) => a.label.localeCompare(b.label))
+        : [...current, { ...created, familyId }].sort((a, b) =>
+            a.label.localeCompare(b.label)
+          )
     );
     setDeviceModelId(created.value);
     setNewDeviceModelName(undefined);
@@ -217,6 +241,10 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
       toast.error("Please select or create a device type");
       return;
     }
+    if (newDeviceModelName && !familyId) {
+      toast.error("Select a family for the device type");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -233,6 +261,7 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
         body: JSON.stringify({
           deviceModelId: newDeviceModelName ? undefined : deviceModelId,
           newDeviceModelName,
+          familyId: newDeviceModelName ? familyId : undefined,
           shellId: shellId ?? null,
           newShellName,
           primaryPhoto: primaryPhoto ?? null,
@@ -246,7 +275,6 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
           purchasePrice: purchasePrice ? parseFloat(purchasePrice) : null,
           purchaseCurrency: device.purchaseCurrency ?? "USD",
           purchasedFrom: purchasedFrom || null,
-          serialNumber: serialNumber || null,
           workingStatus,
           favorite,
           currentlyRunning,
@@ -432,6 +460,28 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="device-family">Family</Label>
+            <select
+              id="device-family"
+              value={familyId}
+              onChange={(event) => setFamilyId(event.target.value)}
+              disabled={!isCreatingDeviceType}
+              className="h-11 w-full rounded-xl border border-stone-200 bg-white px-3 text-sm disabled:bg-stone-50 disabled:text-stone-500"
+            >
+              {families.map((family) => (
+                <option key={family.id} value={family.id}>
+                  {family.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-stone-500">
+              {isCreatingDeviceType
+                ? "Choose Vintage, Connection, Modern, or another family for filtering."
+                : "Family is set from the selected device type."}
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label>Shell</Label>
             <CreatableCombobox
               options={shellOptions}
@@ -536,15 +586,6 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
               id="purchasedFrom"
               value={purchasedFrom}
               onChange={(e) => setPurchasedFrom(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="serialNumber">Serial / Reference Number</Label>
-            <Input
-              id="serialNumber"
-              value={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
             />
           </div>
 

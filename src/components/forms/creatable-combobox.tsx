@@ -10,6 +10,10 @@ export interface ComboboxOption {
   label: string;
 }
 
+export interface DeviceModelComboboxOption extends ComboboxOption {
+  familyId?: string;
+}
+
 interface CreatableComboboxProps {
   options: ComboboxOption[];
   value?: string;

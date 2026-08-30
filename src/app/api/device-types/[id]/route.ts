@@ -5,7 +5,8 @@ import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
 
 const updateDeviceTypeSchema = z.object({
-  name: z.string().trim().min(1).max(120),
+  name: z.string().trim().min(1).max(120).optional(),
+  familyId: z.string().optional(),
 });
 
 export async function PATCH(
@@ -29,7 +30,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Device type not found" }, { status: 404 });
   }
 
-  const name = parsed.data.name;
+  const name = parsed.data.name ?? existing.name;
   const slug = createSlug(name);
 
   const conflict = await prisma.deviceModel.findFirst({
@@ -48,7 +49,11 @@ export async function PATCH(
 
   const updated = await prisma.deviceModel.update({
     where: { id },
-    data: { name, slug },
+    data: {
+      name,
+      slug,
+      ...(parsed.data.familyId !== undefined && { familyId: parsed.data.familyId }),
+    },
     include: {
       family: { select: { id: true, name: true } },
       _count: {

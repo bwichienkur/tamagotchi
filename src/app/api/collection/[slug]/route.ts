@@ -43,6 +43,7 @@ export async function PATCH(
     const resolved = await resolveDeviceModelId({
       deviceModelId: data.deviceModelId ?? device.deviceModelId,
       newDeviceModelName: data.newDeviceModelName,
+      familyId: data.familyId,
     });
     if (!resolved) {
       return NextResponse.json({ error: "Device model required" }, { status: 400 });

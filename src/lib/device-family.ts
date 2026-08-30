@@ -16,3 +16,12 @@ export async function getOrCreateDefaultFamilyId() {
   });
   return created.id;
 }
+
+export async function resolveFamilyIdForCreate(familyId?: string | null) {
+  if (familyId) {
+    const family = await prisma.deviceFamily.findUnique({ where: { id: familyId } });
+    if (family) return family.id;
+  }
+
+  return getOrCreateDefaultFamilyId();
+}
