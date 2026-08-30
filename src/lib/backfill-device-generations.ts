@@ -12,6 +12,7 @@ import {
   parseShellSectionsFromHtml,
 } from "@/lib/importers/tamashell/scraper";
 import { DEVICE_GENERATION_PRESETS } from "@/lib/device-generations";
+import { syncDeviceSeriesFromGenerations } from "@/lib/device-series-catalog";
 
 export interface BackfillGenerationsResult {
   catalogUpdated: number;
@@ -20,6 +21,7 @@ export interface BackfillGenerationsResult {
   shellsMoved: number;
   shellsSkipped: number;
   invalidModelsRemoved: number;
+  seriesLinked: number;
 }
 
 export function inferGenerationFromSlug(
@@ -314,6 +316,8 @@ export async function backfillDeviceGenerations(options?: {
 
   revalidateDeviceCatalog();
 
+  const seriesLinked = await syncDeviceSeriesFromGenerations();
+
   return {
     catalogUpdated,
     slugUpdated,
@@ -321,5 +325,6 @@ export async function backfillDeviceGenerations(options?: {
     shellsMoved,
     shellsSkipped,
     invalidModelsRemoved,
+    seriesLinked,
   };
 }
