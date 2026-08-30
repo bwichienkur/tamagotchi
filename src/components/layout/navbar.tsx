@@ -10,6 +10,7 @@ import {
   Plus,
   Settings,
   Menu,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { GlobalSearch } from "@/components/search/global-search";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/collection", label: "My Collection", icon: Package },
   { href: "/devices", label: "Device Library", icon: Library },
+  { href: "/manage", label: "Manage", icon: SlidersHorizontal },
   { href: "/wiki", label: "Wiki", icon: BookOpen },
 ];
 

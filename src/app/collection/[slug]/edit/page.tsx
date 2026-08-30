@@ -16,7 +16,7 @@ export default async function EditDevicePage({
 
   const device = await prisma.ownedDevice.findFirst({
     where: { slug, userId: session.user.id },
-    include: { deviceModel: true },
+    include: { deviceModel: true, shell: true },
   });
 
   if (!device) notFound();
@@ -44,6 +44,8 @@ export default async function EditDevicePage({
         device={{
           slug: device.slug,
           deviceModelId: device.deviceModelId,
+          shellId: device.shellId,
+          shellName: device.shell?.name ?? device.customShellName,
           nickname: device.nickname,
           primaryPhoto: device.primaryPhoto,
           additionalPhotos: device.additionalPhotos,

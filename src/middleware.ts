@@ -7,7 +7,7 @@ import { getAuthSecret } from "@/lib/auth-secret";
 
 const { auth } = NextAuth(authConfig);
 
-const protectedRoutes = ["/collection", "/admin", "/settings", "/wishlist", "/wiki/new"];
+const protectedRoutes = ["/collection", "/admin", "/settings", "/manage", "/wishlist", "/wiki/new"];
 const protectedPrefixes = [
   "/collection/",
   "/admin/",
@@ -75,6 +75,7 @@ export const config = {
     "/collection/:path*",
     "/admin/:path*",
     "/settings/:path*",
+    "/manage/:path*",
     "/wishlist/:path*",
     "/wiki/new",
     "/wiki/:path*/edit",
