@@ -15,11 +15,26 @@ async function parseUploadError(res: Response): Promise<string> {
     return "Image is too large for upload. Try a smaller photo.";
   }
 
+  if (res.status === 503) {
+    return "Upload is busy. Please try again in a few seconds.";
+  }
+
   if (res.status >= 500) {
     return "Server error during upload. Please try again.";
   }
 
   return text ? text.slice(0, 200) : "Upload failed";
+}
+
+async function postUpload(file: File): Promise<Response> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
 }
 
 /**
@@ -36,14 +51,12 @@ export async function uploadImage(file: File): Promise<string> {
     );
   }
 
-  const formData = new FormData();
-  formData.append("file", prepared);
+  let res = await postUpload(prepared);
 
-  const res = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-    credentials: "include",
-  });
+  if (res.status === 503) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    res = await postUpload(prepared);
+  }
 
   if (res.status === 401) {
     throw new Error("Please sign in to upload images.");

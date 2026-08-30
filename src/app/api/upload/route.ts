@@ -1,5 +1,6 @@
 import "@/lib/bootstrap-env";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { hasBlobStorage, saveUploadedImage } from "@/lib/upload-storage";
 
@@ -11,11 +12,22 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let storageReady = false;
+  try {
+    await prisma.$queryRaw`SELECT 1 FROM "UserUpload" LIMIT 1`;
+    storageReady = true;
+  } catch {
+    storageReady = false;
+  }
+
   return NextResponse.json({
     blob: hasBlobStorage(),
-    modes: hasBlobStorage()
-      ? ["blob-server", "database"]
-      : ["database", "local"],
+    storageReady,
+    modes: process.env.VERCEL
+      ? ["database", "blob-server"]
+      : hasBlobStorage()
+        ? ["blob-server", "database", "local"]
+        : ["database", "local"],
   });
 }
 
@@ -23,6 +35,18 @@ export async function POST(request: NextRequest) {
   const session = await getApiSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+
+  if (!user) {
+    return NextResponse.json(
+      { error: "Your session is outdated. Please sign out and sign in again." },
+      { status: 401 }
+    );
   }
 
   try {
@@ -33,13 +57,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    const url = await saveUploadedImage(file, session.user.id);
+    const url = await saveUploadedImage(file, user.id);
     return NextResponse.json({ url });
   } catch (error) {
     console.error("Upload failed:", error);
 
     if (error instanceof Error) {
       const message = error.message.toLowerCase();
+
       if (message.includes("body exceeded") || message.includes("too large")) {
         return NextResponse.json(
           { error: "Image is too large. The app compresses photos automatically — please try again." },
@@ -47,14 +72,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (
-        message.includes("upload storage") ||
-        message.includes("userupload") ||
-        message.includes("does not exist")
-      ) {
+      if (message.includes("foreign key") || message.includes("userupload_userid_fkey")) {
         return NextResponse.json(
-          { error: "Upload is temporarily unavailable. Please wait a moment and try again." },
-          { status: 503 }
+          { error: "Your account could not be verified. Please sign out and sign in again." },
+          { status: 401 }
         );
       }
     }
