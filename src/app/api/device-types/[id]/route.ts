@@ -3,10 +3,12 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
+import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
 const updateDeviceTypeSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   familyId: z.string().optional(),
+  generation: z.string().trim().max(120).optional().nullable(),
 });
 
 export async function PATCH(
@@ -53,6 +55,9 @@ export async function PATCH(
       name,
       slug,
       ...(parsed.data.familyId !== undefined && { familyId: parsed.data.familyId }),
+      ...(parsed.data.generation !== undefined && {
+        generation: parsed.data.generation || null,
+      }),
     },
     include: {
       family: { select: { id: true, name: true } },
@@ -65,6 +70,8 @@ export async function PATCH(
       },
     },
   });
+
+  revalidateDeviceCatalog();
 
   return NextResponse.json(updated);
 }
@@ -113,6 +120,8 @@ export async function DELETE(
   }
 
   await prisma.deviceModel.delete({ where: { id } });
+
+  revalidateDeviceCatalog();
 
   return NextResponse.json({ ok: true });
 }
