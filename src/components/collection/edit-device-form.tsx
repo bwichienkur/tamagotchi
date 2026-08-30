@@ -25,6 +25,7 @@ import {
   type PhotoFrame,
 } from "@/lib/photo-frame";
 import { cn } from "@/lib/utils";
+import { getConditionLabel } from "@/lib/condition-labels";
 
 export interface EditDeviceInitialValues {
   slug: string;
@@ -404,7 +405,7 @@ export function EditDeviceForm({ deviceModels: initialModels, device }: EditDevi
                       : "border-stone-200 text-stone-600 hover:border-stone-300"
                   )}
                 >
-                  {badge === "NONE" ? "None" : badge}
+                  {getConditionLabel(badge)}
                 </button>
               ))}
             </div>
