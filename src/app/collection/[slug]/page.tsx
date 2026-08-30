@@ -131,7 +131,7 @@ export default async function OwnedDevicePage({
           </Link>
         </div>
         <div className="flex flex-wrap gap-2">
-          <EditDeviceButton slug={device.slug} />
+          <EditDeviceButton slug={device.slug} label="Edit device" />
           <RemoveDeviceButton slug={device.slug} />
         </div>
       </div>

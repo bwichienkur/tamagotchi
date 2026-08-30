@@ -88,8 +88,8 @@ export const CollectionCard = memo(function CollectionCard({
                 </div>
               </div>
             )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <EditDeviceButton slug={device.slug} />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <EditDeviceButton slug={device.slug} label="Edit device" />
               <RemoveDeviceButton slug={device.slug} size="sm" />
             </div>
           </div>
@@ -100,24 +100,31 @@ export const CollectionCard = memo(function CollectionCard({
 
   return (
     <div className="cute-card group overflow-hidden">
-      <Link href={`/collection/${device.slug}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-3">
+      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-3">
+        <Link href={`/collection/${device.slug}`} className="block h-full w-full">
           <div className="relative h-full w-full overflow-hidden rounded-2xl ring-2 ring-white/90 shadow-inner">
-          <RemoteImage
-            src={imageSrc}
-            alt={device.deviceModel.name}
-            fill
-            className="transition-transform duration-300 group-hover:scale-105"
-            sizes="(max-width: 768px) 50vw, 25vw"
-          />
+            <RemoteImage
+              src={imageSrc}
+              alt={device.deviceModel.name}
+              fill
+              className="transition-transform duration-300 group-hover:scale-105"
+              sizes="(max-width: 768px) 50vw, 25vw"
+            />
           </div>
-          {device.favorite && (
-            <div className="absolute right-5 top-5 rounded-full bg-white/95 p-2 shadow-md">
-              <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
-            </div>
-          )}
+        </Link>
+        {device.favorite && (
+          <div className="pointer-events-none absolute right-5 top-5 rounded-full bg-white/95 p-2 shadow-md">
+            <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
+          </div>
+        )}
+        <div className="absolute left-5 top-5 z-10">
+          <EditDeviceButton
+            slug={device.slug}
+            size="icon"
+            className="h-9 w-9 rounded-full border-white/90 bg-white/95 text-tama-cyan shadow-md hover:bg-white"
+          />
         </div>
-      </Link>
+      </div>
       <div className="p-4 pt-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -160,8 +167,8 @@ export const CollectionCard = memo(function CollectionCard({
             </div>
           </div>
         )}
-        <div className="mt-3 flex justify-end gap-2 border-t border-stone-100 pt-3">
-          <EditDeviceButton slug={device.slug} />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3">
+          <EditDeviceButton slug={device.slug} label="Edit device" />
           <RemoveDeviceButton slug={device.slug} size="sm" />
         </div>
       </div>
