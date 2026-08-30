@@ -14,6 +14,7 @@ import { RemoteImage } from "@/components/ui/remote-image";
 import { uploadImage } from "@/lib/upload-image";
 import { createDeviceModelOption } from "@/lib/create-device-model";
 import { cn } from "@/lib/utils";
+import { getConditionLabel } from "@/lib/condition-labels";
 
 interface AddDeviceFormProps {
   deviceModels: ComboboxOption[];
@@ -228,7 +229,7 @@ export function AddDeviceForm({ deviceModels: initialModels }: AddDeviceFormProp
                       : "border-stone-200 text-stone-600 hover:border-stone-300"
                   )}
                 >
-                  {badge === "NONE" ? "None" : badge}
+                  {getConditionLabel(badge)}
                 </button>
               ))}
             </div>

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import { getConditionLabel } from "@/lib/condition-labels";
 import { WikiInfobox } from "@/components/wiki/wiki-infobox";
 import { WikiTableOfContents } from "@/components/wiki/wiki-toc";
 import { extractTocFromSections } from "@/lib/wiki-toc";
@@ -59,7 +60,7 @@ export default async function OwnedDevicePage({
     {
       id: "condition",
       title: "Condition",
-      content: `<p>Condition: ${device.conditionBadge}</p>
+      content: `<p>Condition: ${getConditionLabel(device.conditionBadge)}</p>
         ${device.conditionNotes ? `<p>${device.conditionNotes}</p>` : ""}
         <p>Working status: ${device.workingStatus.replace("_", " ")}</p>`,
     },
@@ -91,7 +92,7 @@ export default async function OwnedDevicePage({
   const infoboxFields = [
     { label: "Device", value: device.deviceModel.name, href: `/devices/${device.deviceModel.slug}` },
     { label: "Shell", value: shellName },
-    { label: "Condition", value: device.conditionBadge === "NONE" ? "—" : device.conditionBadge },
+    { label: "Condition", value: getConditionLabel(device.conditionBadge) },
     { label: "Purchased", value: formatDate(device.purchaseDate) },
     { label: "Region", value: device.shell?.region ?? "—" },
     { label: "Working", value: device.workingStatus.replace("_", " ") },

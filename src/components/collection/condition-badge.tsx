@@ -6,24 +6,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { getConditionLabel, getConditionTooltip, type ConditionBadgeValue } from "@/lib/condition-labels";
 import { cn } from "@/lib/utils";
 
-const BADGE_CONFIG = {
-  NIB: { label: "NIB", tooltip: "New In Box" },
-  IOB: { label: "IOB", tooltip: "In Original Box" },
-} as const;
-
-type BadgeType = keyof typeof BADGE_CONFIG;
-
 interface ConditionBadgeProps {
-  condition: "NONE" | "NIB" | "IOB";
+  condition: ConditionBadgeValue;
   className?: string;
 }
 
 export function ConditionBadge({ condition, className }: ConditionBadgeProps) {
-  if (condition === "NONE") return null;
-
-  const config = BADGE_CONFIG[condition as BadgeType];
+  const isNoBox = condition === "NONE";
 
   return (
     <TooltipProvider>
@@ -31,14 +23,17 @@ export function ConditionBadge({ condition, className }: ConditionBadgeProps) {
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "inline-flex items-center rounded-full bg-gradient-to-r from-tama-mint/40 to-tama-cyan/30 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 ring-1 ring-tama-mint/60",
+              "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1",
+              isNoBox
+                ? "bg-stone-100 text-stone-600 ring-stone-200"
+                : "bg-gradient-to-r from-tama-mint/40 to-tama-cyan/30 text-emerald-800 ring-tama-mint/60",
               className
             )}
           >
-            {config.label}
+            {getConditionLabel(condition)}
           </span>
         </TooltipTrigger>
-        <TooltipContent>{config.tooltip}</TooltipContent>
+        <TooltipContent>{getConditionTooltip(condition)}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );

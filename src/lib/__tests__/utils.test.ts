@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createSlug, normalizeName } from "@/lib/slug";
+import { getConditionLabel } from "@/lib/condition-labels";
 
 describe("database env resolution", () => {
   const original = { ...process.env };
@@ -43,12 +44,11 @@ describe("slug utilities", () => {
   });
 });
 
-describe("condition badge behavior", () => {
-  it("NONE should not render a badge", () => {
-    const shouldRender = (condition: string) => condition !== "NONE";
-    expect(shouldRender("NONE")).toBe(false);
-    expect(shouldRender("NIB")).toBe(true);
-    expect(shouldRender("IOB")).toBe(true);
+describe("condition labels", () => {
+  it("maps NONE to No Box", () => {
+    expect(getConditionLabel("NONE")).toBe("No Box");
+    expect(getConditionLabel("NIB")).toBe("NIB");
+    expect(getConditionLabel("IOB")).toBe("IOB");
   });
 });
 

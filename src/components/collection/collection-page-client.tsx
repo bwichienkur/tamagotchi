@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getConditionLabel } from "@/lib/condition-labels";
 
 interface CollectionDevice {
   id: string;
@@ -183,7 +184,7 @@ export function CollectionPageClient({
             <option value="">All Conditions</option>
             <option value="NIB">NIB</option>
             <option value="IOB">IOB</option>
-            <option value="NONE">None</option>
+            <option value="NONE">{getConditionLabel("NONE")}</option>
           </select>
           <select
             value={sort}
