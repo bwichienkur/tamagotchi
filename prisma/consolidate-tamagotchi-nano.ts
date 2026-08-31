@@ -3,7 +3,7 @@ import { consolidateTamagotchiNanoDevices } from "../src/lib/consolidate-tamagot
 
 consolidateTamagotchiNanoDevices()
   .then((result) => {
-    console.log("Licensed Nanos consolidation:", result);
+    console.log("Tamagotchi Nano consolidation:", result);
   })
   .catch((error) => {
     console.error(error);

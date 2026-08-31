@@ -4,6 +4,7 @@ import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
+  getTamaShellCanonicalDevice,
   isSingleDeviceTamaShellPage,
   type TamaShellCatalogEntry,
   type TamaShellFamily,
@@ -255,10 +256,11 @@ export class TamaShellImporter {
         const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
 
         if (sections && isSingleDeviceTamaShellPage(entry)) {
+          const canonical = getTamaShellCanonicalDevice(entry);
           const deviceModel = await this.findOrCreateDeviceModel({
-            name: entry.name,
+            name: canonical.name,
             family: entry.family,
-            modelSlug: entry.slug,
+            modelSlug: canonical.slug,
           });
           devices++;
 

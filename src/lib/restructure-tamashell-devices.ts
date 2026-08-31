@@ -5,9 +5,10 @@ import {
   FAMILY_SLUG_MAP,
   TAMASHELL_CATALOG,
   isSingleDeviceTamaShellPage,
+  getTamaShellCanonicalDevice,
   type TamaShellCatalogEntry,
 } from "@/lib/importers/tamashell/catalog";
-import { consolidateLicensedNanosDevices } from "@/lib/consolidate-licensed-nanos";
+import { consolidateTamagotchiNanoDevices } from "@/lib/consolidate-tamagotchi-nano";
 import {
   importMissingTamaShellShells,
   moveMatchingTamaShellShells,
@@ -29,22 +30,24 @@ export interface RestructureTamaShellResult {
   devicesRemoved: number;
 }
 
-const LEGACY_LICENSED_NANO_PREFIX = /^Licensed Tamagotchi Nanos\b/i;
+const LEGACY_LICENSED_NANO_PREFIX = /^Licensed Tamagotchi Nanos?\b/i;
 
-/** Rename legacy "Licensed Tamagotchi Nanos …" device types to "Tamagotchi Nanos …". */
+/** Rename legacy "Licensed Tamagotchi Nano(s) …" device types to "Tamagotchi Nano …". */
 export async function renameLicensedTamagotchiNanoDevices(): Promise<number> {
   const models = await prisma.deviceModel.findMany({
     where: {
       OR: [
         { name: { equals: "Licensed Tamagotchi Nanos", mode: "insensitive" } },
+        { name: { equals: "Licensed Tamagotchi Nano", mode: "insensitive" } },
         { name: { startsWith: "Licensed Tamagotchi Nanos ", mode: "insensitive" } },
+        { name: { startsWith: "Licensed Tamagotchi Nano ", mode: "insensitive" } },
       ],
     },
   });
 
   let renamed = 0;
   for (const model of models) {
-    const newName = model.name.replace(LEGACY_LICENSED_NANO_PREFIX, "Tamagotchi Nanos").trim();
+    const newName = model.name.replace(LEGACY_LICENSED_NANO_PREFIX, "Tamagotchi Nano").trim();
     if (newName === model.name) continue;
 
     let newSlug = createSlug(newName);
@@ -161,10 +164,11 @@ export async function restructureTamaShellDevices(options?: {
   let devicesRenamed = 0;
   let shellsMoved = 0;
   let shellsImported = 0;
-  let devicesRemoved = 0;
-  let licensedConsolidated = 0;
 
   const licensedRenamed = await renameLicensedTamagotchiNanoDevices();
+  const nanoConsolidated = await consolidateTamagotchiNanoDevices();
+  let licensedConsolidated = nanoConsolidated.shellsMoved;
+  let devicesRemoved = nanoConsolidated.devicesRemoved;
 
   for (const entry of TAMASHELL_CATALOG) {
     const familyRecord = await prisma.deviceFamily.findUnique({
@@ -178,16 +182,16 @@ export async function restructureTamaShellDevices(options?: {
       const sections = parseShellSectionsFromHtml(html, pageUrl, entry.name, entry.slug);
 
       if (sections && isSingleDeviceTamaShellPage(entry)) {
-        const consolidated = await consolidateLicensedNanosDevices();
-        licensedConsolidated += consolidated.shellsMoved;
-        devicesRemoved += consolidated.devicesRemoved;
+        const canonical = getTamaShellCanonicalDevice(entry);
+        const deviceModel = await prisma.deviceModel.findUnique({
+          where: { slug: canonical.slug },
+        });
+        if (!deviceModel) continue;
 
         const flatShells = flattenSectionShells(sections);
-        shellsImported += await importMissingTamaShellShells(
-          consolidated.canonicalDeviceId,
-          flatShells,
-          { storeSectionInWave: true }
-        );
+        shellsImported += await importMissingTamaShellShells(deviceModel.id, flatShells, {
+          storeSectionInWave: true,
+        });
         continue;
       }
 
