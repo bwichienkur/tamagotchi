@@ -9,6 +9,7 @@
     "db:import-tamashell": "npx tsx -e \"import('./src/lib/importers/tamashell').then(m => new m.TamaShellImporter().importAll().then(console.log))\"",
     "db:restructure-tamashell": "npx tsx prisma/restructure-tamashell.ts",
     "db:consolidate-licensed-nanos": "npx tsx prisma/consolidate-licensed-nanos.ts",
+    "db:consolidate-tamagotchi-nano": "npx tsx prisma/consolidate-tamagotchi-nano.ts",
     "db:rename-licensed-nanos": "npx tsx prisma/rename-licensed-nanos.ts",
     "start": "next start",
     "lint": "eslint",

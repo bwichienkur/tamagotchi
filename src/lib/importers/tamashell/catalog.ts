@@ -49,7 +49,7 @@ export const TAMASHELL_CATALOG: TamaShellCatalogEntry[] = [
   { slug: "tama4u", name: "Tamagotchi 4U", family: "Modern" },
   { slug: "4uplus", name: "Tamagotchi 4U+", family: "Modern" },
   { slug: "mix", name: "Tamagotchi m!x", family: "Modern" },
-  { slug: "licensed", name: "Tamagotchi Nanos", family: "Modern" },
+  { slug: "licensed", name: "Tamagotchi Nano", family: "Modern" },
   { slug: "meets", name: "Tamagotchi Meets / On", family: "Modern" },
   { slug: "pix", name: "Tamagotchi Pix", family: "Modern" },
   { slug: "smart", name: "Tamagotchi Smart", family: "Modern" },
@@ -63,10 +63,18 @@ export const TAMASHELL_CATALOG: TamaShellCatalogEntry[] = [
 ];
 
 /** TamaShell pages kept as one device; franchise sections become shells (not devices). */
-export const TAMASHELL_SINGLE_DEVICE_SLUGS = new Set(["licensed"]);
+export const TAMASHELL_SINGLE_DEVICE_SLUGS = new Set(["licensed", "nano"]);
 
 export function isSingleDeviceTamaShellPage(entry: TamaShellCatalogEntry): boolean {
   return TAMASHELL_SINGLE_DEVICE_SLUGS.has(entry.slug);
+}
+
+/** Canonical device row for imports that share one library device (e.g. nano + licensed). */
+export function getTamaShellCanonicalDevice(entry: TamaShellCatalogEntry) {
+  if (entry.slug === "licensed" || entry.slug === "nano") {
+    return { slug: "nano", name: "Tamagotchi Nano" };
+  }
+  return { slug: entry.slug, name: entry.name };
 }
 
 export const FAMILY_SLUG_MAP: Record<TamaShellFamily, string> = {
