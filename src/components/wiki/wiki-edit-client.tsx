@@ -36,12 +36,59 @@ interface WikiEditClientProps {
   initialSections: WikiSection[];
 }
 
+type WikiSubsection = NonNullable<WikiSection["children"]>[number];
+
+function SubsectionEditor({
+  subsection,
+  onUpdate,
+  onDelete,
+}: {
+  subsection: WikiSubsection;
+  onUpdate: (updates: Partial<WikiSubsection>) => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="mt-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/80">
+      <div className="flex items-center gap-2 border-b border-stone-100 px-3 py-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+          Subsection
+        </span>
+        <Input
+          value={subsection.title}
+          onChange={(e) => onUpdate({ title: e.target.value })}
+          className="flex-1 border-0 bg-transparent text-sm font-semibold shadow-none focus-visible:ring-0"
+          placeholder="Subsection title"
+        />
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-md p-1 text-red-400 hover:bg-red-50"
+          aria-label="Delete subsection"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="p-3">
+        <WikiEditor
+          content={subsection.content}
+          onChange={(html) => onUpdate({ content: html })}
+          placeholder="Subsection content..."
+          className="bg-white"
+        />
+      </div>
+    </div>
+  );
+}
+
 function SortableSection({
   section,
   onUpdate,
   onDelete,
   onDuplicate,
   onToggleCollapse,
+  onAddSubsection,
+  onUpdateSubsection,
+  onDeleteSubsection,
   collapsed,
 }: {
   section: WikiSection;
@@ -49,6 +96,13 @@ function SortableSection({
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onToggleCollapse: (id: string) => void;
+  onAddSubsection: (id: string) => void;
+  onUpdateSubsection: (
+    sectionId: string,
+    subsectionId: string,
+    updates: Partial<WikiSubsection>
+  ) => void;
+  onDeleteSubsection: (sectionId: string, subsectionId: string) => void;
   collapsed: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -91,6 +145,26 @@ function SortableSection({
             content={section.content}
             onChange={(html) => onUpdate(section.id, { content: html })}
           />
+
+          {(section.children ?? []).map((subsection) => (
+            <SubsectionEditor
+              key={subsection.id}
+              subsection={subsection}
+              onUpdate={(updates) => onUpdateSubsection(section.id, subsection.id, updates)}
+              onDelete={() => onDeleteSubsection(section.id, subsection.id)}
+            />
+          ))}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mt-3 text-stone-600"
+            onClick={() => onAddSubsection(section.id)}
+          >
+            <Plus className="h-4 w-4" />
+            Add Subsection
+          </Button>
         </div>
       )}
     </div>
@@ -138,7 +212,9 @@ export function WikiEditClient({
   }, [title, summary, sections, draftKey]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -160,6 +236,7 @@ export function WikiEditClient({
         id: `section-${Date.now()}`,
         title: "New Section",
         content: "<p></p>",
+        children: [],
       },
     ]);
   };
@@ -185,9 +262,64 @@ export function WikiEditClient({
           ...section,
           id: `section-${Date.now()}`,
           title: `${section.title} (copy)`,
+          children: section.children?.map((child) => ({
+            ...child,
+            id: `subsection-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          })),
         },
       ]);
     }
+  };
+
+  const addSubsection = (sectionId: string) => {
+    setSections((prev) =>
+      prev.map((section) => {
+        if (section.id !== sectionId) return section;
+        const children = section.children ?? [];
+        return {
+          ...section,
+          children: [
+            ...children,
+            {
+              id: `subsection-${Date.now()}`,
+              title: "New Subsection",
+              content: "<p></p>",
+            },
+          ],
+        };
+      })
+    );
+  };
+
+  const updateSubsection = (
+    sectionId: string,
+    subsectionId: string,
+    updates: Partial<WikiSubsection>
+  ) => {
+    setSections((prev) =>
+      prev.map((section) => {
+        if (section.id !== sectionId) return section;
+        return {
+          ...section,
+          children: (section.children ?? []).map((child) =>
+            child.id === subsectionId ? { ...child, ...updates } : child
+          ),
+        };
+      })
+    );
+  };
+
+  const deleteSubsection = (sectionId: string, subsectionId: string) => {
+    if (!confirm("Delete this subsection?")) return;
+    setSections((prev) =>
+      prev.map((section) => {
+        if (section.id !== sectionId) return section;
+        return {
+          ...section,
+          children: (section.children ?? []).filter((child) => child.id !== subsectionId),
+        };
+      })
+    );
   };
 
   const handleSave = async () => {
@@ -276,6 +408,9 @@ export function WikiEditClient({
                 onUpdate={updateSection}
                 onDelete={deleteSection}
                 onDuplicate={duplicateSection}
+                onAddSubsection={addSubsection}
+                onUpdateSubsection={updateSubsection}
+                onDeleteSubsection={deleteSubsection}
                 onToggleCollapse={(id) =>
                   setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }))
                 }
