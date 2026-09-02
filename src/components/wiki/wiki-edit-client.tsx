@@ -28,12 +28,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { WikiEditor } from "@/components/wiki/wiki-editor";
 import { WikiSection } from "@/components/wiki/wiki-content";
+import {
+  WikiDeviceDetailsEditor,
+  createDeviceDetailsInput,
+  type WikiDeviceDetails,
+  type WikiDeviceDetailsInput,
+} from "@/components/wiki/wiki-device-details-editor";
 
 interface WikiEditClientProps {
   slug: string;
   initialTitle: string;
   initialSummary: string;
   initialSections: WikiSection[];
+  deviceModel?: WikiDeviceDetails | null;
 }
 
 type WikiSubsection = NonNullable<WikiSection["children"]>[number];
@@ -176,11 +183,15 @@ export function WikiEditClient({
   initialTitle,
   initialSummary,
   initialSections,
+  deviceModel = null,
 }: WikiEditClientProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [summary, setSummary] = useState(initialSummary);
   const [sections, setSections] = useState<WikiSection[]>(initialSections);
+  const [deviceDetails, setDeviceDetails] = useState<WikiDeviceDetailsInput | null>(
+    deviceModel ? createDeviceDetailsInput(deviceModel) : null
+  );
   const [editSummary, setEditSummary] = useState("");
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -195,21 +206,22 @@ export function WikiEditClient({
         if (parsed.title) setTitle(parsed.title);
         if (parsed.summary) setSummary(parsed.summary);
         if (parsed.sections) setSections(parsed.sections);
+        if (parsed.deviceDetails && deviceModel) setDeviceDetails(parsed.deviceDetails);
       } catch {
         // ignore
       }
     }
-  }, [draftKey]);
+  }, [draftKey, deviceModel]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem(
         draftKey,
-        JSON.stringify({ title, summary, sections })
+        JSON.stringify({ title, summary, sections, deviceDetails })
       );
     }, 1000);
     return () => clearTimeout(timer);
-  }, [title, summary, sections, draftKey]);
+  }, [title, summary, sections, deviceDetails, draftKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -325,6 +337,25 @@ export function WikiEditClient({
   const handleSave = async () => {
     setSaving(true);
     try {
+      if (deviceModel && deviceDetails) {
+        const deviceRes = await fetch(`/api/device-types/${deviceModel.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(deviceDetails),
+        });
+
+        if (!deviceRes.ok) {
+          if (deviceRes.status === 401) {
+            toast.error("Please sign in to save device details.");
+            router.push(`/login?callbackUrl=/wiki/${slug}/edit#device-details`);
+            return;
+          }
+          const data = await deviceRes.json().catch(() => ({}));
+          throw new Error(data.error ?? "Failed to save device details");
+        }
+      }
+
       const res = await fetch(`/api/wiki/${slug}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -393,6 +424,14 @@ export function WikiEditClient({
           />
         </div>
       </div>
+
+      {deviceModel && deviceDetails && (
+        <WikiDeviceDetailsEditor
+          device={deviceModel}
+          value={deviceDetails}
+          onChange={setDeviceDetails}
+        />
+      )}
 
       <DndContext
         sensors={sensors}

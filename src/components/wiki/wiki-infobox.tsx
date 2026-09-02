@@ -17,6 +17,7 @@ interface WikiInfoboxProps {
   imageAlt?: string;
   imageFrame?: PhotoFrame | null;
   fields: InfoboxField[];
+  emptyMessage?: string;
   className?: string;
 }
 
@@ -26,6 +27,7 @@ export function WikiInfobox({
   imageAlt,
   imageFrame,
   fields,
+  emptyMessage,
   className,
 }: WikiInfoboxProps) {
   const groups = fields.reduce<Record<string, InfoboxField[]>>((acc, field) => {
@@ -69,29 +71,33 @@ export function WikiInfobox({
             {title}
           </h3>
         )}
-        {Object.entries(groups).map(([groupName, groupFields]) => (
-          <div key={groupName} className="mb-4 last:mb-0">
-            <h4 className="mb-2 border-b border-stone-200 pb-1 text-xs font-bold uppercase tracking-wider text-stone-400">
-              {groupName}
-            </h4>
-            <dl className="space-y-2">
-              {groupFields.map((field) => (
-                <div key={field.label} className="grid grid-cols-[1fr_1.2fr] gap-2 text-sm">
-                  <dt className="text-stone-500">{field.label}</dt>
-                  <dd className="font-medium text-stone-800">
-                    {field.href ? (
-                      <Link href={field.href} className="text-tama-cyan hover:underline">
-                        {field.value}
-                      </Link>
-                    ) : (
-                      field.value
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ))}
+        {fields.length === 0 && emptyMessage ? (
+          <p className="text-center text-sm text-stone-500">{emptyMessage}</p>
+        ) : (
+          Object.entries(groups).map(([groupName, groupFields]) => (
+            <div key={groupName} className="mb-4 last:mb-0">
+              <h4 className="mb-2 border-b border-stone-200 pb-1 text-xs font-bold uppercase tracking-wider text-stone-400">
+                {groupName}
+              </h4>
+              <dl className="space-y-2">
+                {groupFields.map((field) => (
+                  <div key={field.label} className="grid grid-cols-[1fr_1.2fr] gap-2 text-sm">
+                    <dt className="text-stone-500">{field.label}</dt>
+                    <dd className="font-medium text-stone-800">
+                      {field.href ? (
+                        <Link href={field.href} className="text-tama-cyan hover:underline">
+                          {field.value}
+                        </Link>
+                      ) : (
+                        field.value
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))
+        )}
       </div>
     </aside>
   );
