@@ -19,9 +19,8 @@ export function bootstrapAuthEnv(): void {
     }
   }
 
-  if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
-    process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
-  }
+  // Auth.js v5 infers the host from request headers (trustHost). VERCEL_URL is the
+  // deployment hostname, not the custom domain users visit (e.g. tamagotmi.vercel.app).
 }
 
 bootstrapAuthEnv();
