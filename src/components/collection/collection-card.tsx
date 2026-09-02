@@ -104,17 +104,15 @@ export const CollectionCard = memo(function CollectionCard({
   return (
     <div className="cute-card group relative h-full overflow-hidden">
       <Link href={`/collection/${device.slug}`} className="block">
-        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-1 sm:p-2">
-          <div className="relative h-full w-full overflow-hidden rounded-xl ring-2 ring-white/90 shadow-inner sm:rounded-2xl">
-            <FramedImage
-              src={imageSrc}
-              alt={device.deviceModel.name}
-              frame={primaryFrame}
-              fill
-              className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 sm:p-2"
-              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
-            />
-          </div>
+        <div className="relative aspect-[5/4] overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10">
+          <FramedImage
+            src={imageSrc}
+            alt={device.deviceModel.name}
+            frame={primaryFrame}
+            fill
+            className="transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 20vw"
+          />
         </div>
       </Link>
       {device.favorite && (
@@ -122,7 +120,7 @@ export const CollectionCard = memo(function CollectionCard({
           <Heart className="h-3.5 w-3.5 fill-tama-pink text-tama-pink sm:h-4 sm:w-4" />
         </div>
       )}
-      <div className="px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
+      <div className="px-2 pb-2 pt-1 sm:px-2 sm:pb-2 sm:pt-1">
         <div className="flex items-start justify-between gap-1.5 sm:gap-2">
           <div className="min-w-0 flex-1">
             <Link

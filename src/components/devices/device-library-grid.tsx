@@ -21,41 +21,42 @@ export function DeviceLibraryGrid({ models, ownedByModel }: DeviceLibraryGridPro
   const sortedModels = [...models].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
       {sortedModels.map((model) => {
         const ownedCount = ownedByModel[model.id] ?? 0;
         const imageUrl = model.heroImage ?? model.shells[0]?.primaryImage ?? null;
 
         return (
           <Link key={model.id} href={`/devices/${model.slug}`}>
-            <Card className="cute-card h-full">
-              {imageUrl ? (
-                <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10 p-2">
+            <Card className="cute-card h-full overflow-hidden">
+              <div className="relative aspect-[5/4] overflow-hidden bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10">
+                {imageUrl ? (
                   <RemoteImage
                     src={imageUrl}
                     alt={model.name}
                     fill
-                    className="object-contain p-2"
-                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
+                    sizes="(max-width: 640px) 45vw, (max-width: 1024px) 25vw, 20vw"
                   />
-                </div>
-              ) : (
-                <div className="aspect-video bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10" />
-              )}
-              <CardContent className="pt-4">
-                <h4 className="font-display font-bold text-stone-900">{model.name}</h4>
-                <p className="text-sm text-stone-500">{model.releaseYear ?? "—"}</p>
-                <p className="mt-1 text-xs text-stone-400">
-                  {model._count.shells} known shells
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-tama-cyan/10 to-tama-pink/10" />
+                )}
+              </div>
+              <CardContent className="p-2 sm:p-2.5">
+                <h4 className="line-clamp-2 font-display text-[11px] font-bold leading-tight text-stone-900 sm:text-xs">
+                  {model.name}
+                </h4>
+                <p className="mt-0.5 text-[10px] text-stone-500 sm:text-[11px]">
+                  {model.releaseYear ?? "—"}
+                </p>
+                <p className="mt-0.5 text-[10px] text-stone-400">
+                  {model._count.shells} shells
                 </p>
                 {ownedCount > 0 && (
-                  <p className="mt-2 text-xs font-medium text-tama-cyan">
+                  <p className="mt-1 text-[10px] font-medium text-tama-cyan">
                     ✓ Owned{ownedCount > 1 ? ` × ${ownedCount}` : ""}
                   </p>
                 )}
-                <span className="mt-2 inline-block text-sm text-tama-cyan">
-                  View Device →
-                </span>
               </CardContent>
             </Card>
           </Link>
