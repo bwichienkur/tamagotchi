@@ -5,9 +5,22 @@ import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
 import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
+const devicePropertySchema = z.object({
+  id: z.string().optional(),
+  group: z.string().trim().min(1),
+  label: z.string().trim().min(1),
+  value: z.string(),
+  sortOrder: z.number().int().optional(),
+});
+
 const updateDeviceTypeSchema = z.object({
   name: z.string().trim().min(1).max(120).optional(),
   familyId: z.string().optional(),
+  heroImage: z.string().nullable().optional(),
+  manufacturer: z.string().trim().max(120).nullable().optional(),
+  releaseYear: z.number().int().min(1970).max(2100).nullable().optional(),
+  regions: z.array(z.string().trim().min(1)).optional(),
+  properties: z.array(devicePropertySchema).optional(),
 });
 
 const deviceTypeInclude = {
@@ -66,13 +79,44 @@ export async function PATCH(
       name,
       slug,
       ...(parsed.data.familyId !== undefined && { familyId }),
+      ...(parsed.data.heroImage !== undefined && { heroImage: parsed.data.heroImage }),
+      ...(parsed.data.manufacturer !== undefined && { manufacturer: parsed.data.manufacturer }),
+      ...(parsed.data.releaseYear !== undefined && { releaseYear: parsed.data.releaseYear }),
+      ...(parsed.data.regions !== undefined && { regions: parsed.data.regions }),
     },
     include: deviceTypeInclude,
   });
 
+  if (parsed.data.properties !== undefined) {
+    await prisma.$transaction([
+      prisma.deviceProperty.deleteMany({ where: { deviceModelId: id } }),
+      ...(parsed.data.properties.length > 0
+        ? [
+            prisma.deviceProperty.createMany({
+              data: parsed.data.properties.map((property, index) => ({
+                deviceModelId: id,
+                group: property.group,
+                label: property.label,
+                value: property.value,
+                sortOrder: property.sortOrder ?? index,
+              })),
+            }),
+          ]
+        : []),
+    ]);
+  }
+
+  const withProperties = await prisma.deviceModel.findUnique({
+    where: { id },
+    include: {
+      ...deviceTypeInclude,
+      properties: { orderBy: { sortOrder: "asc" } },
+    },
+  });
+
   revalidateDeviceCatalog();
 
-  return NextResponse.json(updated);
+  return NextResponse.json(withProperties ?? updated);
 }
 
 export async function DELETE(

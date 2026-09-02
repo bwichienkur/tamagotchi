@@ -116,6 +116,13 @@ export function WikiPageView({
               <Link href={`/wiki/${page.slug}/edit`}>
                 <Button variant="outline" size="sm" className="rounded-full">Edit Page</Button>
               </Link>
+              {page.deviceModel && (
+                <Link href={`/wiki/${page.slug}/edit#device-details`}>
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    Edit Photo &amp; Details
+                  </Button>
+                </Link>
+              )}
               <Link href={`/wiki/${page.slug}/history`}>
                 <Button variant="ghost" size="sm" className="rounded-full">View History</Button>
               </Link>
@@ -175,6 +182,11 @@ export function WikiPageView({
               title="Details"
               image={page.deviceModel?.heroImage ?? "/placeholder-device.svg"}
               fields={infoboxFields}
+              emptyMessage={
+                isAuthenticated && page.deviceModel
+                  ? "Add a photo and detail fields from Edit Photo & Details."
+                  : undefined
+              }
             />
           </div>
 
@@ -233,7 +245,19 @@ export function WikiPageView({
             image={page.deviceModel?.heroImage ?? "/placeholder-device.svg"}
             imageAlt={page.title}
             fields={infoboxFields}
+            emptyMessage={
+              isAuthenticated && page.deviceModel
+                ? "Add a photo and detail fields from Edit Photo & Details."
+                : undefined
+            }
           />
+          {page.deviceModel && isAuthenticated && (
+            <Link href={`/wiki/${page.slug}/edit#device-details`} className="mt-4 block">
+              <Button variant="outline" className="w-full" size="sm">
+                Edit Photo &amp; Details
+              </Button>
+            </Link>
+          )}
           {page.deviceModel && (
             <Link href={`/devices/${page.deviceModel.slug}`} className="mt-4 block">
               <Button variant="outline" className="w-full" size="sm">
