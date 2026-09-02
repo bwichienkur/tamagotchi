@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { createSlug } from "@/lib/slug";
+import { revalidatePath } from "next/cache";
 import { revalidateDeviceCatalog } from "@/lib/revalidate-catalog";
 
 const devicePropertySchema = z.object({
@@ -115,6 +116,7 @@ export async function PATCH(
   });
 
   revalidateDeviceCatalog();
+  revalidatePath("/wiki", "layout");
 
   return NextResponse.json(withProperties ?? updated);
 }
