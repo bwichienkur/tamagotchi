@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "WikiPage" ADD COLUMN "coverImage" TEXT;

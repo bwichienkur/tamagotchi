@@ -1,12 +1,13 @@
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { z } from "zod";
 
-
 const updateWikiSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
+  coverImage: z.string().nullable().optional(),
   sections: z.array(
     z.object({
       id: z.string(),
@@ -76,6 +77,7 @@ export async function PUT(
       data: {
         title: data.title,
         summary: data.summary,
+        ...(data.coverImage !== undefined && { coverImage: data.coverImage }),
         sections: data.sections,
         updatedById: session.user.id,
       },
@@ -91,6 +93,9 @@ export async function PUT(
       },
     }),
   ]);
+
+  revalidatePath("/wiki", "layout");
+  revalidatePath(`/wiki/${slug}`);
 
   return NextResponse.json(updated);
 }

@@ -237,6 +237,7 @@ model WikiPage {
   ownedDeviceId String?
   pageType      WikiPageType @default(GENERAL)
   summary       String?      @db.Text
+  coverImage    String?
   richContent   String?      @db.Text
   sections      Json?
   createdById   String?

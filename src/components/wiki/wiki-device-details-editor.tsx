@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ImagePlus, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,9 @@ export function WikiDeviceDetailsEditor({
     try {
       const url = await uploadImage(file);
       update({ heroImage: url });
+      toast.success("Photo uploaded. Click Save to publish it on the wiki page.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to upload photo");
     } finally {
       setUploading(false);
     }
