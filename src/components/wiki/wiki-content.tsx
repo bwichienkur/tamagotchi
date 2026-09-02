@@ -72,7 +72,9 @@ export function WikiSectionsContent({ sections, className }: WikiSectionsContent
           <WikiContent html={section.content} />
           {section.children?.map((child) => (
             <div key={child.id} id={child.id} className="mt-6 scroll-mt-24">
-              <h3 className="mb-3 text-xl font-semibold text-stone-900">{child.title}</h3>
+              <h3 className="wiki-section-heading mb-3 font-display text-xl font-bold text-stone-900">
+                {child.title}
+              </h3>
               <WikiContent html={child.content} />
             </div>
           ))}

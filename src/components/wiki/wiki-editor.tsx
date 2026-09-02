@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -39,9 +40,8 @@ export function WikiEditor({
   placeholder = "Start writing...",
   className,
 }: WikiEditorProps) {
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
+  const extensions = useMemo(
+    () => [
       StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
       Link.configure({ openOnClick: false }),
       Image,
@@ -52,9 +52,15 @@ export function WikiEditor({
       TableHeader,
       TableCell,
     ],
+    [placeholder]
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions,
     content,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+    onUpdate: ({ editor: currentEditor }) => {
+      onChange(currentEditor.getHTML());
     },
     editorProps: {
       attributes: {
@@ -64,76 +70,97 @@ export function WikiEditor({
     },
   });
 
+  useEffect(() => {
+    if (!editor || editor.isFocused) return;
+    const current = editor.getHTML();
+    if (content !== current) {
+      editor.commands.setContent(content, { emitUpdate: false });
+    }
+  }, [content, editor]);
+
   if (!editor) return null;
+
+  const runCommand = (command: () => void) => {
+    command();
+  };
 
   const addLink = () => {
     const url = window.prompt("URL");
     if (url) {
-      editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+      runCommand(() =>
+        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run()
+      );
     }
   };
 
   const addWikiLink = () => {
     const page = window.prompt("Wiki page name (use [[Page Name]] format)");
     if (page) {
-      editor.chain().focus().insertContent(`[[${page}]]`).run();
+      runCommand(() => editor.chain().focus().insertContent(`[[${page}]]`).run());
     }
   };
 
   const addImage = () => {
     const url = window.prompt("Image URL");
     if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      runCommand(() => editor.chain().focus().setImage({ src: url }).run());
     }
   };
 
   return (
     <div className={cn("overflow-hidden rounded-xl border border-stone-200", className)}>
-      <div className="flex flex-wrap gap-1 border-b border-stone-200 bg-stone-50 p-2">
+      <div
+        className="flex flex-wrap gap-1 border-b border-stone-200 bg-stone-50 p-2"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          onClick={() => runCommand(() => editor.chain().focus().toggleBold().run())}
           active={editor.isActive("bold")}
           icon={<Bold className="h-4 w-4" />}
           label="Bold"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          onClick={() => runCommand(() => editor.chain().focus().toggleItalic().run())}
           active={editor.isActive("italic")}
           icon={<Italic className="h-4 w-4" />}
           label="Italic"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            runCommand(() => editor.chain().focus().toggleHeading({ level: 2 }).run())
+          }
           active={editor.isActive("heading", { level: 2 })}
           icon={<Heading2 className="h-4 w-4" />}
           label="Heading 2"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          onClick={() =>
+            runCommand(() => editor.chain().focus().toggleHeading({ level: 3 }).run())
+          }
           active={editor.isActive("heading", { level: 3 })}
           icon={<Heading3 className="h-4 w-4" />}
           label="Heading 3"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          onClick={() => runCommand(() => editor.chain().focus().toggleBulletList().run())}
           active={editor.isActive("bulletList")}
           icon={<List className="h-4 w-4" />}
           label="Bullet list"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          onClick={() => runCommand(() => editor.chain().focus().toggleOrderedList().run())}
           active={editor.isActive("orderedList")}
           icon={<ListOrdered className="h-4 w-4" />}
           label="Ordered list"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          onClick={() => runCommand(() => editor.chain().focus().toggleBlockquote().run())}
           active={editor.isActive("blockquote")}
           icon={<Quote className="h-4 w-4" />}
           label="Quote"
         />
         <ToolbarButton
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          onClick={() => runCommand(() => editor.chain().focus().setHorizontalRule().run())}
           icon={<Minus className="h-4 w-4" />}
           label="Horizontal rule"
         />
@@ -142,7 +169,9 @@ export function WikiEditor({
         <ToolbarButton onClick={addImage} icon={<ImageIcon className="h-4 w-4" />} label="Image" />
         <ToolbarButton
           onClick={() =>
-            editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+            runCommand(() =>
+              editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+            )
           }
           icon={<TableIcon className="h-4 w-4" />}
           label="Table"
@@ -170,8 +199,17 @@ function ToolbarButton({
       variant={active ? "secondary" : "ghost"}
       size="icon"
       className="h-8 w-8"
-      onClick={onClick}
+      onMouseDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+      }}
       title={label}
+      aria-label={label}
     >
       {icon}
     </Button>
