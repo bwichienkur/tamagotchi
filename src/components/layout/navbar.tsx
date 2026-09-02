@@ -114,12 +114,6 @@ export function Navbar() {
               </Button>
               {user ? (
                 <div className="flex items-center gap-1">
-                  <Link
-                    href="/settings"
-                    className="hidden rounded-full px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-white/80 hover:text-stone-900 md:inline"
-                  >
-                    Settings
-                  </Link>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-tama-pink/20 text-xs font-bold text-tama-pink">
                     {(user.name?.[0] ?? user.email?.[0] ?? "U").toUpperCase()}
                   </div>
