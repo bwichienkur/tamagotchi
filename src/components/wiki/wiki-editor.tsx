@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -55,23 +55,29 @@ export function WikiEditor({
     [placeholder]
   );
 
+  const isInternalUpdate = useRef(false);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions,
     content,
     onUpdate: ({ editor: currentEditor }) => {
+      isInternalUpdate.current = true;
       onChange(currentEditor.getHTML());
+      queueMicrotask(() => {
+        isInternalUpdate.current = false;
+      });
     },
     editorProps: {
       attributes: {
         class:
-          "prose prose-stone max-w-none min-h-[200px] p-4 focus:outline-none",
+          "prose prose-stone max-w-none min-h-[200px] p-4 focus:outline-none prose-ul:list-disc prose-ol:list-decimal prose-li:my-1",
       },
     },
   });
 
   useEffect(() => {
-    if (!editor || editor.isFocused) return;
+    if (!editor || editor.isFocused || isInternalUpdate.current) return;
     const current = editor.getHTML();
     if (content !== current) {
       editor.commands.setContent(content, { emitUpdate: false });
@@ -108,7 +114,7 @@ export function WikiEditor({
   };
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border border-stone-200", className)}>
+    <div className={cn("wiki-editor overflow-hidden rounded-xl border border-stone-200", className)}>
       <div
         className="flex flex-wrap gap-1 border-b border-stone-200 bg-stone-50 p-2"
         onMouseDown={(event) => event.stopPropagation()}
