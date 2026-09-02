@@ -50,6 +50,7 @@ export default async function WikiEditPage({
       slug={slug}
       initialTitle={page.title}
       initialSummary={page.summary ?? ""}
+      initialCoverImage={page.coverImage}
       initialSections={(page.sections as unknown as WikiSection[]) ?? []}
       deviceModel={deviceModel}
     />

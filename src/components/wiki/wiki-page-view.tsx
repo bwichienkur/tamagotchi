@@ -7,6 +7,7 @@ import { DeleteWikiButton } from "@/components/wiki/delete-wiki-button";
 import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { DeviceShellGrid, DeviceShellItem } from "@/components/devices/device-shell-grid";
 import { Button } from "@/components/ui/button";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { formatDate } from "@/lib/utils";
 
 interface WikiPageData {
@@ -14,6 +15,7 @@ interface WikiPageData {
   title: string;
   slug: string;
   summary?: string | null;
+  coverImage?: string | null;
   sections?: unknown;
   deviceModel?: {
     name: string;
@@ -116,10 +118,16 @@ export function WikiPageView({
               <Link href={`/wiki/${page.slug}/edit`}>
                 <Button variant="outline" size="sm" className="rounded-full">Edit Page</Button>
               </Link>
-              {page.deviceModel && (
+              {page.deviceModel ? (
                 <Link href={`/wiki/${page.slug}/edit#device-details`}>
                   <Button variant="outline" size="sm" className="rounded-full">
                     Edit Photo &amp; Details
+                  </Button>
+                </Link>
+              ) : (
+                <Link href={`/wiki/${page.slug}/edit#page-photo`}>
+                  <Button variant="outline" size="sm" className="rounded-full">
+                    Edit Page Photo
                   </Button>
                 </Link>
               )}
@@ -172,6 +180,19 @@ export function WikiPageView({
               <p className="mt-4 text-lg leading-relaxed text-stone-600">
                 {page.summary}
               </p>
+            )}
+            {!page.deviceModel && page.coverImage && (
+              <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                <div className="relative aspect-[16/9] w-full max-w-2xl">
+                  <RemoteImage
+                    src={page.coverImage}
+                    alt={page.title}
+                    fill
+                    className="object-contain p-4"
+                    sizes="(max-width: 768px) 100vw, 672px"
+                  />
+                </div>
+              </div>
             )}
           </header>
 

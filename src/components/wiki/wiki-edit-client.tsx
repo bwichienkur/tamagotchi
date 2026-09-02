@@ -34,11 +34,13 @@ import {
   type WikiDeviceDetails,
   type WikiDeviceDetailsInput,
 } from "@/components/wiki/wiki-device-details-editor";
+import { WikiPagePhotoEditor } from "@/components/wiki/wiki-page-photo-editor";
 
 interface WikiEditClientProps {
   slug: string;
   initialTitle: string;
   initialSummary: string;
+  initialCoverImage?: string | null;
   initialSections: WikiSection[];
   deviceModel?: WikiDeviceDetails | null;
 }
@@ -182,12 +184,14 @@ export function WikiEditClient({
   slug,
   initialTitle,
   initialSummary,
+  initialCoverImage = null,
   initialSections,
   deviceModel = null,
 }: WikiEditClientProps) {
   const router = useRouter();
   const [title, setTitle] = useState(initialTitle);
   const [summary, setSummary] = useState(initialSummary);
+  const [coverImage, setCoverImage] = useState<string | null>(initialCoverImage);
   const [sections, setSections] = useState<WikiSection[]>(initialSections);
   const [deviceDetails, setDeviceDetails] = useState<WikiDeviceDetailsInput | null>(
     deviceModel ? createDeviceDetailsInput(deviceModel) : null
@@ -205,6 +209,7 @@ export function WikiEditClient({
         const parsed = JSON.parse(draft);
         if (parsed.title) setTitle(parsed.title);
         if (parsed.summary) setSummary(parsed.summary);
+        if (parsed.coverImage !== undefined) setCoverImage(parsed.coverImage);
         if (parsed.sections) setSections(parsed.sections);
         if (parsed.deviceDetails && deviceModel) setDeviceDetails(parsed.deviceDetails);
       } catch {
@@ -217,11 +222,11 @@ export function WikiEditClient({
     const timer = setTimeout(() => {
       localStorage.setItem(
         draftKey,
-        JSON.stringify({ title, summary, sections, deviceDetails })
+        JSON.stringify({ title, summary, coverImage, sections, deviceDetails })
       );
     }, 1000);
     return () => clearTimeout(timer);
-  }, [title, summary, sections, deviceDetails, draftKey]);
+  }, [title, summary, coverImage, sections, deviceDetails, draftKey]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -363,6 +368,7 @@ export function WikiEditClient({
         body: JSON.stringify({
           title,
           summary,
+          coverImage,
           sections,
           editSummary: editSummary || "Updated page",
         }),
@@ -430,6 +436,14 @@ export function WikiEditClient({
           device={deviceModel}
           value={deviceDetails}
           onChange={setDeviceDetails}
+        />
+      )}
+
+      {!deviceModel && (
+        <WikiPagePhotoEditor
+          title={title}
+          coverImage={coverImage}
+          onChange={setCoverImage}
         />
       )}
 

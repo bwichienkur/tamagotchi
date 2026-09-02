@@ -33,6 +33,11 @@ function isProtectedPath(pathname: string): boolean {
 export default auth((request) => {
   const { pathname } = request.nextUrl;
 
+  // Uploaded images use opaque IDs and must be viewable on public wiki pages.
+  if (request.method === "GET" && pathname.startsWith("/api/uploads/")) {
+    return NextResponse.next();
+  }
+
   if (!isProtectedPath(pathname)) {
     return NextResponse.next();
   }

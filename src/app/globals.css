@@ -212,3 +212,17 @@ body::after {
   background: #fafaf9;
   font-weight: 600;
 }
+
+.wiki-editor .ProseMirror .selectedCell::after {
+  background: rgba(78, 205, 196, 0.18);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.wiki-editor .ProseMirror td,
+.wiki-editor .ProseMirror th {
+  position: relative;
+}

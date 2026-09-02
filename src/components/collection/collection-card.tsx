@@ -102,56 +102,58 @@ export const CollectionCard = memo(function CollectionCard({
   }
 
   return (
-    <div className="cute-card group overflow-hidden">
-      <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-3">
-        <Link href={`/collection/${device.slug}`} className="block h-full w-full">
-          <div className="relative h-full w-full overflow-hidden rounded-2xl ring-2 ring-white/90 shadow-inner">
+    <div className="cute-card group relative h-full overflow-hidden">
+      <Link href={`/collection/${device.slug}`} className="block">
+        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-tama-cyan/10 via-tama-mint/5 to-tama-pink/10 p-1 sm:p-2">
+          <div className="relative h-full w-full overflow-hidden rounded-xl ring-2 ring-white/90 shadow-inner sm:rounded-2xl">
             <FramedImage
               src={imageSrc}
               alt={device.deviceModel.name}
               frame={primaryFrame}
               fill
-              className="transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-contain p-1 transition-transform duration-300 group-hover:scale-105 sm:p-2"
+              sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
             />
           </div>
-        </Link>
-        {device.favorite && (
-          <div className="pointer-events-none absolute right-5 top-5 rounded-full bg-white/95 p-2 shadow-md">
-            <Heart className="h-4 w-4 fill-tama-pink text-tama-pink" />
-          </div>
-        )}
-      </div>
-      <div className="px-3 py-2">
-        <div className="flex items-start justify-between gap-2">
+        </div>
+      </Link>
+      {device.favorite && (
+        <div className="pointer-events-none absolute right-3 top-3 rounded-full bg-white/95 p-1.5 shadow-md sm:right-4 sm:top-4 sm:p-2">
+          <Heart className="h-3.5 w-3.5 fill-tama-pink text-tama-pink sm:h-4 sm:w-4" />
+        </div>
+      )}
+      <div className="px-2 pb-2 pt-1.5 sm:px-3 sm:pb-3 sm:pt-2">
+        <div className="flex items-start justify-between gap-1.5 sm:gap-2">
           <div className="min-w-0 flex-1">
             <Link
               href={`/collection/${device.slug}`}
-              className="font-display block truncate font-bold leading-tight text-stone-900 hover:text-tama-cyan"
+              className="font-display line-clamp-2 text-xs font-bold leading-tight text-stone-900 hover:text-tama-cyan sm:text-sm"
             >
-              {device.deviceModel.name}
+              {device.nickname ?? device.deviceModel.name}
             </Link>
-            <p className="truncate text-sm leading-snug text-stone-500">{shellName}</p>
+            <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-stone-500 sm:text-xs">
+              {shellName}
+            </p>
             {device.nickname && (
-              <p className="truncate text-xs leading-snug text-stone-400">
-                &ldquo;{device.nickname}&rdquo;
+              <p className="mt-0.5 truncate text-[10px] leading-snug text-stone-400 sm:text-xs">
+                {device.deviceModel.name}
               </p>
             )}
           </div>
-          <div className="flex shrink-0 items-start gap-1">
+          <div className="flex shrink-0 items-start gap-0.5 sm:gap-1">
             <ConditionBadge condition={device.conditionBadge} />
             <DeviceActionsMenu slug={device.slug} />
           </div>
         </div>
         {device.showMoreInfo && (
-          <div className="mt-2 border-t border-stone-100 pt-2">
+          <div className="mt-1.5 border-t border-stone-100 pt-1.5 sm:mt-2 sm:pt-2">
             <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 setExpanded(!expanded);
               }}
-              className="text-xs font-medium text-tama-cyan hover:underline"
+              className="text-[10px] font-medium text-tama-cyan hover:underline sm:text-xs"
             >
               {expanded ? "Hide info" : "Show more info"}
             </button>
@@ -162,7 +164,7 @@ export const CollectionCard = memo(function CollectionCard({
               )}
             >
               <div className="overflow-hidden">
-                <p className="pt-2 text-sm leading-relaxed text-stone-600">
+                <p className="pt-1.5 text-[10px] leading-relaxed text-stone-600 sm:pt-2 sm:text-sm">
                   {device.showMoreInfo}
                 </p>
               </div>
