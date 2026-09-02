@@ -18,6 +18,7 @@ export function WikiContent({ html, className }: WikiContentProps) {
         "prose-headings:scroll-mt-24 prose-headings:font-semibold prose-headings:text-stone-900",
         "prose-h2:text-2xl prose-h2:border-b prose-h2:border-stone-200 prose-h2:pb-2 prose-h2:mt-10",
         "prose-h3:text-xl prose-h4:text-lg",
+        "prose-ul:list-disc prose-ol:list-decimal prose-li:my-1",
         "prose-a:text-tama-cyan prose-a:no-underline hover:prose-a:underline",
         "prose-blockquote:border-l-tama-pink prose-blockquote:bg-tama-pink/5 prose-blockquote:py-1 prose-blockquote:rounded-r-lg",
         "prose-table:border prose-table:border-stone-200",

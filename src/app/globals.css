@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 :root {
   --background: #fff9f5;
@@ -165,4 +166,49 @@ body::after {
   main {
     padding-bottom: 5rem;
   }
+}
+
+/* TipTap editor: Tailwind preflight strips list/table defaults; prose restores them */
+.wiki-editor .ProseMirror {
+  min-height: 12rem;
+}
+
+.wiki-editor .ProseMirror ul {
+  list-style-type: disc;
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.wiki-editor .ProseMirror ol {
+  list-style-type: decimal;
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.wiki-editor .ProseMirror li {
+  margin: 0.25rem 0;
+}
+
+.wiki-editor .ProseMirror li p {
+  margin: 0;
+}
+
+.wiki-editor .ProseMirror table {
+  border-collapse: collapse;
+  margin: 1rem 0;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.wiki-editor .ProseMirror th,
+.wiki-editor .ProseMirror td {
+  border: 1px solid #e7e5e4;
+  min-width: 4rem;
+  padding: 0.5rem;
+  vertical-align: top;
+}
+
+.wiki-editor .ProseMirror th {
+  background: #fafaf9;
+  font-weight: 600;
 }
