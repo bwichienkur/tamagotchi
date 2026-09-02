@@ -81,6 +81,15 @@ export function WikiPageView({
     }
   }
 
+  const infoboxImage = page.deviceModel?.heroImage ?? page.coverImage ?? null;
+
+  const infoboxEmptyMessage =
+    isAuthenticated && !infoboxImage
+      ? page.deviceModel
+        ? "Add a photo and detail fields from Edit Photo & Details."
+        : "Add a photo from Edit Page Photo."
+      : undefined;
+
   const breadcrumbs = [
     { label: "Wiki", href: "/wiki" },
     ...(page.parent
@@ -181,19 +190,6 @@ export function WikiPageView({
                 {page.summary}
               </p>
             )}
-            {!page.deviceModel && page.coverImage && (
-              <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-                <div className="relative aspect-[16/9] w-full max-w-2xl">
-                  <RemoteImage
-                    src={page.coverImage}
-                    alt={page.title}
-                    fill
-                    className="object-contain p-4"
-                    sizes="(max-width: 768px) 100vw, 672px"
-                  />
-                </div>
-              </div>
-            )}
           </header>
 
           <WikiTableOfContents items={tocItems} mobile />
@@ -201,13 +197,10 @@ export function WikiPageView({
           <div className="mt-6 lg:hidden">
             <WikiInfobox
               title="Details"
-              image={page.deviceModel?.heroImage ?? "/placeholder-device.svg"}
+              image={infoboxImage ?? "/placeholder-device.svg"}
+              imageAlt={page.title}
               fields={infoboxFields}
-              emptyMessage={
-                isAuthenticated && page.deviceModel
-                  ? "Add a photo and detail fields from Edit Photo & Details."
-                  : undefined
-              }
+              emptyMessage={infoboxEmptyMessage}
             />
           </div>
 
@@ -263,19 +256,22 @@ export function WikiPageView({
         <aside className="hidden lg:block">
           <WikiInfobox
             title="Details"
-            image={page.deviceModel?.heroImage ?? "/placeholder-device.svg"}
+            image={infoboxImage ?? "/placeholder-device.svg"}
             imageAlt={page.title}
             fields={infoboxFields}
-            emptyMessage={
-              isAuthenticated && page.deviceModel
-                ? "Add a photo and detail fields from Edit Photo & Details."
-                : undefined
-            }
+            emptyMessage={infoboxEmptyMessage}
           />
           {page.deviceModel && isAuthenticated && (
             <Link href={`/wiki/${page.slug}/edit#device-details`} className="mt-4 block">
               <Button variant="outline" className="w-full" size="sm">
                 Edit Photo &amp; Details
+              </Button>
+            </Link>
+          )}
+          {!page.deviceModel && isAuthenticated && (
+            <Link href={`/wiki/${page.slug}/edit#page-photo`} className="mt-4 block">
+              <Button variant="outline" className="w-full" size="sm">
+                Edit Page Photo
               </Button>
             </Link>
           )}
