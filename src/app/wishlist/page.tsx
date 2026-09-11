@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/session";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { WishlistPageClient } from "@/components/wishlist/wishlist-page-client";
 
 export default async function WishlistPage() {
   const session = await requireAuth();
@@ -16,29 +14,24 @@ export default async function WishlistPage() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-      <h1 className="mb-8 text-3xl font-bold">Wishlist</h1>
-
-      {items.length === 0 ? (
-        <p className="text-stone-500">No shells on your wishlist yet.</p>
-      ) : (
-        <div className="space-y-4">
-          {items.map((item) => (
-            <Card key={item.id}>
-              <CardContent className="flex items-center justify-between pt-6">
-                <div>
-                  <h3 className="font-semibold">{item.shell.name}</h3>
-                  <p className="text-sm text-stone-500">{item.shell.deviceModel.name}</p>
-                  {item.notes && <p className="mt-1 text-sm text-stone-400">{item.notes}</p>}
-                </div>
-                <Link href={`/devices/${item.shell.deviceModel.slug}/shells/${item.shell.slug}`}>
-                  <Button variant="outline" size="sm">View Shell</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+    <WishlistPageClient
+      initialItems={items.map((item) => ({
+        id: item.id,
+        shellId: item.shellId,
+        notes: item.notes,
+        shell: {
+          id: item.shell.id,
+          name: item.shell.name,
+          slug: item.shell.slug,
+          primaryImage: item.shell.primaryImage,
+          region: item.shell.region,
+          year: item.shell.year,
+          deviceModel: {
+            name: item.shell.deviceModel.name,
+            slug: item.shell.deviceModel.slug,
+          },
+        },
+      }))}
+    />
   );
 }

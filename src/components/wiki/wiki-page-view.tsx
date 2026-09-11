@@ -45,6 +45,7 @@ interface WikiPageViewProps {
   ownedDevices?: OwnedDeviceSummary[];
   isAuthenticated?: boolean;
   shells?: DeviceShellItem[];
+  wishlistedShellIds?: string[];
 }
 
 export function WikiPageView({
@@ -53,6 +54,7 @@ export function WikiPageView({
   ownedDevices = [],
   isAuthenticated,
   shells = [],
+  wishlistedShellIds = [],
 }: WikiPageViewProps) {
   const sections = (page.sections as WikiSection[]) ?? [];
   const tocItems = extractTocFromSections(sections);
@@ -211,7 +213,11 @@ export function WikiPageView({
           <WikiSectionsContent sections={sections} className="mt-8 lg:mt-0" />
 
           {page.deviceModel && shells.length > 0 && (
-            <DeviceShellGrid deviceSlug={page.deviceModel.slug} shells={shells} />
+            <DeviceShellGrid
+              deviceSlug={page.deviceModel.slug}
+              shells={shells}
+              wishlistedShellIds={wishlistedShellIds}
+            />
           )}
 
           {page.children && page.children.length > 0 && (
