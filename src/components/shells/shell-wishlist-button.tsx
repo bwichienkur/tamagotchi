@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 interface ShellWishlistButtonProps {
   shellId: string;
   initialWishlisted?: boolean;
+  variant?: "overlay" | "inline";
   className?: string;
   onToggle?: (wishlisted: boolean) => void;
 }
@@ -17,6 +18,7 @@ interface ShellWishlistButtonProps {
 export function ShellWishlistButton({
   shellId,
   initialWishlisted = false,
+  variant = "overlay",
   className,
   onToggle,
 }: ShellWishlistButtonProps) {
@@ -72,7 +74,9 @@ export function ShellWishlistButton({
       aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
       title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
       className={cn(
-        "absolute right-1.5 top-1.5 z-10 rounded-full bg-white/95 p-1.5 shadow-md transition-colors sm:right-2 sm:top-2",
+        variant === "overlay"
+          ? "absolute right-1.5 top-1.5 z-10 rounded-full bg-white/95 p-1.5 shadow-md transition-colors sm:right-2 sm:top-2"
+          : "rounded-full p-1.5 transition-colors",
         wishlisted ? "text-tama-pink" : "text-stone-400 hover:text-tama-pink",
         className
       )}
