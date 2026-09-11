@@ -11,6 +11,7 @@ import {
   Settings,
   Menu,
   SlidersHorizontal,
+  Heart,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { GlobalSearch } from "@/components/search/global-search";
@@ -23,6 +24,7 @@ import { AppLogo } from "@/components/ui/app-logo";
 const NAV_ITEMS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/collection", label: "My Collection", icon: Package },
+  { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/devices", label: "Device Library", icon: Library },
   { href: "/manage", label: "Manage", icon: SlidersHorizontal },
   { href: "/wiki", label: "Wiki", icon: BookOpen },

@@ -6,6 +6,7 @@ import { withDatabase } from "@/lib/db-query";
 import { WikiPageView } from "@/components/wiki/wiki-page-view";
 import { EditDeviceButton } from "@/components/collection/edit-device-button";
 import { DeviceShellGrid } from "@/components/devices/device-shell-grid";
+import { getWishlistedShellIds } from "@/lib/wishlist-data";
 
 async function getShellOwnedCounts(userId: string | undefined, deviceModelId: string) {
   if (!userId) return {} as Record<string, number>;
@@ -59,6 +60,7 @@ export default async function DeviceModelPage({
     const ownedCount = ownedDevices.length;
 
     const shellOwnedCounts = await getShellOwnedCounts(session?.user?.id, device.id);
+    const wishlistedShellIds = await getWishlistedShellIds(session?.user?.id);
     const shellsWithOwnership = device.shells.map((shell) => ({
       ...shell,
       ownedCount: shellOwnedCounts[shell.id] ?? 0,
@@ -90,6 +92,7 @@ export default async function DeviceModelPage({
             }))}
             isAuthenticated={!!session?.user}
             shells={shellsWithOwnership}
+            wishlistedShellIds={wishlistedShellIds}
           />
         );
       }
@@ -123,7 +126,11 @@ export default async function DeviceModelPage({
           </div>
         )}
         <div className="mt-8">
-          <DeviceShellGrid deviceSlug={device.slug} shells={shellsWithOwnership} />
+          <DeviceShellGrid
+            deviceSlug={device.slug}
+            shells={shellsWithOwnership}
+            wishlistedShellIds={wishlistedShellIds}
+          />
         </div>
       </div>
     );
