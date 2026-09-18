@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { withDatabase } from "@/lib/db-query";
 import { WikiInfobox } from "@/components/wiki/wiki-infobox";
 import { Button } from "@/components/ui/button";
+import { collectionAddUrl } from "@/lib/collection-add-url";
 
 export default async function ShellDetailPage({
   params,
@@ -72,7 +73,14 @@ export default async function ShellDetailPage({
       {owned ? (
         <div className="mt-6 text-tama-cyan">✓ Owned</div>
       ) : session?.user ? (
-        <Link href={`/collection/add`} className="mt-6 inline-block">
+        <Link
+          href={collectionAddUrl({
+            deviceModelId: shell.deviceModelId,
+            shellId: shell.id,
+            shellImage: shell.primaryImage,
+          })}
+          className="mt-6 inline-block"
+        >
           <Button>Add to Collection</Button>
         </Link>
       ) : null}

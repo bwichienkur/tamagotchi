@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -34,21 +34,34 @@ interface FamilyOption {
 interface AddDeviceFormProps {
   deviceModels: DeviceModelComboboxOption[];
   families: FamilyOption[];
+  initialDeviceModelId?: string;
+  initialShellId?: string;
+  initialShellName?: string;
+  initialPrimaryPhoto?: string;
 }
 
 export function AddDeviceForm({
   deviceModels: initialModels,
   families,
+  initialDeviceModelId,
+  initialShellId,
+  initialShellName,
+  initialPrimaryPhoto,
 }: AddDeviceFormProps) {
   const router = useRouter();
   const [deviceModels, setDeviceModels] = useState(initialModels);
-  const [deviceModelId, setDeviceModelId] = useState<string>();
+  const [deviceModelId, setDeviceModelId] = useState<string | undefined>(initialDeviceModelId);
   const [newDeviceModelName, setNewDeviceModelName] = useState<string>();
-  const [familyId, setFamilyId] = useState(families[0]?.id ?? "");
-  const [shellId, setShellId] = useState<string>();
+  const initialFamilyId =
+    initialModels.find((model) => model.value === initialDeviceModelId)?.familyId ??
+    families[0]?.id ??
+    "";
+  const [familyId, setFamilyId] = useState(initialFamilyId);
+  const [shellId, setShellId] = useState<string | undefined>(initialShellId);
   const [newShellName, setNewShellName] = useState<string>();
-  const { shellOptions, loadingShells, createShell } = useShellOptions(deviceModelId);
-  const [primaryPhoto, setPrimaryPhoto] = useState<string>();
+  const { shellOptions, loadingShells, createShell, setShellOptions } =
+    useShellOptions(deviceModelId);
+  const [primaryPhoto, setPrimaryPhoto] = useState<string | undefined>(initialPrimaryPhoto);
   const [additionalPhotos, setAdditionalPhotos] = useState<string[]>([]);
   const [photoFrames, setPhotoFrames] = useState<DevicePhotoFrames>({});
   const [editingPhoto, setEditingPhoto] = useState<"primary" | number | null>(null);
@@ -69,6 +82,17 @@ export function AddDeviceForm({
   const [uploading, setUploading] = useState(false);
 
   const isCreatingDeviceType = Boolean(newDeviceModelName);
+
+  useEffect(() => {
+    if (!initialShellId || !initialShellName) return;
+    setShellOptions((current) =>
+      current.some((shell) => shell.value === initialShellId)
+        ? current
+        : [...current, { value: initialShellId, label: initialShellName }].sort((a, b) =>
+            a.label.localeCompare(b.label)
+          )
+    );
+  }, [initialShellId, initialShellName, setShellOptions]);
 
   const resetShellSelection = () => {
     setShellId(undefined);
@@ -248,13 +272,18 @@ export function AddDeviceForm({
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(
+          typeof data.error === "string" && data.error ? data.error : "Failed to save"
+        );
+      }
 
       const device = await res.json();
       toast.success("Device added to collection!");
       router.push(`/collection/${device.slug}`);
-    } catch {
-      toast.error("Failed to add device");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to add device");
     } finally {
       setSaving(false);
     }
