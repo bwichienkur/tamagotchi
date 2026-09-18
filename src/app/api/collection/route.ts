@@ -74,10 +74,37 @@ export async function POST(request: NextRequest) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const body = await request.json();
-  const data = createOwnedDeviceSchema.parse(body);
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  let data: z.infer<typeof createOwnedDeviceSchema>;
+  try {
+    data = createOwnedDeviceSchema.parse(body);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const message = error.issues[0]?.message ?? "Invalid request";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    throw error;
+  }
 
   let deviceModelId = data.deviceModelId;
+  let shellId = data.shellId;
+
+  if (shellId && !deviceModelId && !data.newDeviceModelName) {
+    const shellForModel = await prisma.shell.findUnique({
+      where: { id: shellId },
+      select: { deviceModelId: true },
+    });
+    if (!shellForModel) {
+      return NextResponse.json({ error: "Shell not found" }, { status: 400 });
+    }
+    deviceModelId = shellForModel.deviceModelId;
+  }
 
   if (data.newDeviceModelName) {
     const resolved = await resolveDeviceModelId({
@@ -93,7 +120,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Device model required" }, { status: 400 });
   }
 
-  let shellId = data.shellId;
+  if (shellId) {
+    const shellRecord = await prisma.shell.findUnique({
+      where: { id: shellId },
+      select: { deviceModelId: true },
+    });
+    if (!shellRecord) {
+      return NextResponse.json({ error: "Shell not found" }, { status: 400 });
+    }
+    if (shellRecord.deviceModelId !== deviceModelId) {
+      return NextResponse.json(
+        { error: "Shell does not match the selected device type" },
+        { status: 400 }
+      );
+    }
+  }
 
   if (data.newShellName && deviceModelId) {
     const shellSlug = createSlug(data.newShellName);

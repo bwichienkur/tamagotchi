@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
+import { collectionAddUrl } from "@/lib/collection-add-url";
 
 interface ShellData {
   id: string;
@@ -191,7 +192,13 @@ export function ShellCatalogClient({
               </p>
               <div className="mt-3 flex items-center justify-between">
                 {shell.ownedCount === 0 ? (
-                  <Link href="/collection/add">
+                  <Link
+                    href={collectionAddUrl({
+                      deviceModelId: shell.deviceModel.id,
+                      shellId: shell.id,
+                      shellImage: shell.primaryImage,
+                    })}
+                  >
                     <Button size="sm" variant="outline">Add to Collection</Button>
                   </Link>
                 ) : (
