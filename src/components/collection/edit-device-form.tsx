@@ -270,7 +270,7 @@ export function EditDeviceForm({
           newShellName,
           primaryPhoto: primaryPhoto ?? null,
           additionalPhotos,
-          photoFrames: framesToSave,
+          ...(framesToSave ? { photoFrames: framesToSave } : {}),
           conditionBadge,
           conditionNotes: conditionNotes || null,
           nickname: nickname || null,
