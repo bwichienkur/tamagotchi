@@ -11,7 +11,7 @@ const devicePhotoFramesSchema = z.object({
   additional: z.record(z.string(), photoFrameSchema).optional(),
 });
 
-export const ownedDeviceInputSchema = z.object({
+const ownedDeviceInputSchemaBase = z.object({
   deviceModelId: z.string().optional(),
   newDeviceModelName: z.string().optional(),
   familyId: z.string().optional(),
@@ -36,6 +36,13 @@ export const ownedDeviceInputSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+export const ownedDeviceInputSchema = ownedDeviceInputSchemaBase;
+
+/** POST /api/collection — same fields as PATCH with a default condition badge. */
+export const createOwnedDeviceInputSchema = ownedDeviceInputSchemaBase.extend({
+  conditionBadge: z.enum(["NONE", "NIB", "IOB"]).default("NONE"),
+});
+
 export type OwnedDeviceInput = z.infer<typeof ownedDeviceInputSchema>;
 
 export function toDateInputValue(date: Date | string | null | undefined): string {
@@ -43,4 +50,11 @@ export function toDateInputValue(date: Date | string | null | undefined): string
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "";
   return d.toISOString().slice(0, 10);
+}
+
+export function parseOptionalNumber(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number.parseFloat(trimmed);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }

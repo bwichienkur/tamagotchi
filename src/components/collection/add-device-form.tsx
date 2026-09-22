@@ -25,6 +25,7 @@ import {
 } from "@/lib/photo-frame";
 import { cn } from "@/lib/utils";
 import { getConditionLabel } from "@/lib/condition-labels";
+import { parseOptionalNumber } from "@/lib/owned-device-schema";
 
 interface FamilyOption {
   id: string;
@@ -245,31 +246,33 @@ export function AddDeviceForm({
         photoFrames
       );
 
+      const payload = {
+        deviceModelId,
+        newDeviceModelName,
+        familyId: newDeviceModelName ? familyId : undefined,
+        shellId,
+        newShellName,
+        primaryPhoto: primaryPhoto ?? undefined,
+        additionalPhotos,
+        ...(framesToSave ? { photoFrames: framesToSave } : {}),
+        conditionBadge,
+        nickname: nickname || undefined,
+        showMoreInfo: showMoreInfo || undefined,
+        purchaseDate: purchaseDate || undefined,
+        purchasePrice: parseOptionalNumber(purchasePrice),
+        estimatedValue: parseOptionalNumber(estimatedValue),
+        purchasedFrom: purchasedFrom || undefined,
+        workingStatus,
+        favorite,
+        currentlyRunning,
+        notes: notes || undefined,
+      };
+
       const res = await fetch("/api/collection", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          deviceModelId,
-          newDeviceModelName,
-          familyId: newDeviceModelName ? familyId : undefined,
-          shellId,
-          newShellName,
-          primaryPhoto,
-          additionalPhotos,
-          photoFrames: framesToSave,
-          conditionBadge,
-          nickname: nickname || undefined,
-          showMoreInfo: showMoreInfo || undefined,
-          purchaseDate: purchaseDate || undefined,
-          purchasePrice: purchasePrice ? parseFloat(purchasePrice) : undefined,
-          estimatedValue: estimatedValue ? parseFloat(estimatedValue) : undefined,
-          purchasedFrom: purchasedFrom || undefined,
-          workingStatus,
-          favorite,
-          currentlyRunning,
-          notes: notes || undefined,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
