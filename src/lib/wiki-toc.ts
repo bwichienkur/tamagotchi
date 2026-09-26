@@ -1,3 +1,5 @@
+import { collectSectionTocItems } from "@/lib/wiki-sections";
+
 export interface TocItem {
   id: string;
   text: string;
@@ -8,20 +10,13 @@ export interface WikiSectionInput {
   id: string;
   title: string;
   level?: number;
-  children?: Array<{ id: string; title: string }>;
+  kind?: "content" | "chart";
+  chart?: import("@/lib/wiki-sections").WikiChartConfig;
+  children?: WikiSectionInput[];
 }
 
 export function extractTocFromSections(sections: WikiSectionInput[]): TocItem[] {
-  const items: TocItem[] = [];
-  for (const section of sections) {
-    items.push({ id: section.id, text: section.title, level: section.level ?? 2 });
-    if (section.children) {
-      for (const child of section.children) {
-        items.push({ id: child.id, text: child.title, level: 3 });
-      }
-    }
-  }
-  return items;
+  return collectSectionTocItems(sections);
 }
 
 export function extractTocFromHtml(html: string): TocItem[] {
@@ -38,3 +33,5 @@ export function extractTocFromHtml(html: string): TocItem[] {
   }
   return items;
 }
+
+export { collectSectionTocItems };

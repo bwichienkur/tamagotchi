@@ -27,7 +27,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { WikiEditor } from "@/components/wiki/wiki-editor";
-import { WikiSection } from "@/components/wiki/wiki-content";
+import { WikiChartEditor } from "@/components/wiki/wiki-chart-editor";
+import type { WikiSection } from "@/components/wiki/wiki-content";
+import {
+  addChildSection,
+  createChartSection,
+  createContentSection,
+  createDefaultWikiChart,
+  createSubsection,
+  deleteSectionById,
+  duplicateSectionTree,
+  updateSectionById,
+} from "@/lib/wiki-sections";
 import {
   WikiDeviceDetailsEditor,
   createDeviceDetailsInput,
@@ -45,32 +56,41 @@ interface WikiEditClientProps {
   deviceModel?: WikiDeviceDetails | null;
 }
 
-type WikiSubsection = NonNullable<WikiSection["children"]>[number];
-
-function SubsectionEditor({
-  subsection,
+function OutlineSectionEditor({
+  section,
+  depth,
   onUpdate,
   onDelete,
+  onAddChild,
 }: {
-  subsection: WikiSubsection;
-  onUpdate: (updates: Partial<WikiSubsection>) => void;
-  onDelete: () => void;
+  section: WikiSection;
+  depth: number;
+  onUpdate: (id: string, updates: Partial<WikiSection>) => void;
+  onDelete: (id: string) => void;
+  onAddChild: (parentId: string) => void;
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/80">
+    <div
+      className={
+        depth > 0
+          ? "mt-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/80 pl-3"
+          : ""
+      }
+      style={depth > 0 ? { marginLeft: Math.min(depth * 12, 48) } : undefined}
+    >
       <div className="flex items-center gap-2 border-b border-stone-100 px-3 py-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">
-          Subsection
+          {depth === 0 ? "Subsection" : `Subsection L${depth + 1}`}
         </span>
         <Input
-          value={subsection.title}
-          onChange={(e) => onUpdate({ title: e.target.value })}
+          value={section.title}
+          onChange={(e) => onUpdate(section.id, { title: e.target.value })}
           className="flex-1 border-0 bg-transparent text-sm font-semibold shadow-none focus-visible:ring-0"
           placeholder="Subsection title"
         />
         <button
           type="button"
-          onClick={onDelete}
+          onClick={() => onDelete(section.id)}
           className="rounded-md p-1 text-red-400 hover:bg-red-50"
           aria-label="Delete subsection"
         >
@@ -79,11 +99,31 @@ function SubsectionEditor({
       </div>
       <div className="p-3">
         <WikiEditor
-          content={subsection.content}
-          onChange={(html) => onUpdate({ content: html })}
+          content={section.content}
+          onChange={(html) => onUpdate(section.id, { content: html })}
           placeholder="Subsection content..."
           className="bg-white"
         />
+        {(section.children ?? []).map((child) => (
+          <OutlineSectionEditor
+            key={child.id}
+            section={child}
+            depth={depth + 1}
+            onUpdate={onUpdate}
+            onDelete={onDelete}
+            onAddChild={onAddChild}
+          />
+        ))}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="mt-3 text-stone-600"
+          onClick={() => onAddChild(section.id)}
+        >
+          <Plus className="h-4 w-4" />
+          Add nested subsection
+        </Button>
       </div>
     </div>
   );
@@ -96,8 +136,8 @@ function SortableSection({
   onDuplicate,
   onToggleCollapse,
   onAddSubsection,
-  onUpdateSubsection,
-  onDeleteSubsection,
+  onUpdateSection,
+  onDeleteSection,
   collapsed,
 }: {
   section: WikiSection;
@@ -105,13 +145,9 @@ function SortableSection({
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onToggleCollapse: (id: string) => void;
-  onAddSubsection: (id: string) => void;
-  onUpdateSubsection: (
-    sectionId: string,
-    subsectionId: string,
-    updates: Partial<WikiSubsection>
-  ) => void;
-  onDeleteSubsection: (sectionId: string, subsectionId: string) => void;
+  onAddSubsection: (parentId: string) => void;
+  onUpdateSection: (id: string, updates: Partial<WikiSection>) => void;
+  onDeleteSection: (id: string) => void;
   collapsed: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -123,21 +159,42 @@ function SortableSection({
     transition,
   };
 
+  const isChart = section.kind === "chart";
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className="rounded-2xl border border-stone-200 bg-white"
     >
-      <div className="flex items-center gap-2 border-b border-stone-100 p-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-stone-100 p-3">
         <button type="button" className="cursor-grab touch-none" {...attributes} {...listeners}>
           <GripVertical className="h-4 w-4 text-stone-400" />
         </button>
         <Input
           value={section.title}
           onChange={(e) => onUpdate(section.id, { title: e.target.value })}
-          className="flex-1 border-0 bg-transparent font-semibold shadow-none focus-visible:ring-0"
+          className="min-w-[140px] flex-1 border-0 bg-transparent font-semibold shadow-none focus-visible:ring-0"
         />
+        <select
+          value={section.kind ?? "content"}
+          onChange={(event) => {
+            const kind = event.target.value as "content" | "chart";
+            if (kind === "chart") {
+              onUpdate(section.id, {
+                kind,
+                chart: section.chart ?? createDefaultWikiChart(),
+                content: section.content || "",
+              });
+            } else {
+              onUpdate(section.id, { kind, content: section.content || "<p></p>" });
+            }
+          }}
+          className="h-9 rounded-lg border border-stone-200 bg-white px-2 text-sm"
+        >
+          <option value="content">Content section</option>
+          <option value="chart">Character chart</option>
+        </select>
         <button type="button" onClick={() => onToggleCollapse(section.id)}>
           {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
         </button>
@@ -150,30 +207,52 @@ function SortableSection({
       </div>
       {!collapsed && (
         <div className="p-3">
-          <WikiEditor
-            content={section.content}
-            onChange={(html) => onUpdate(section.id, { content: html })}
-          />
+          {isChart ? (
+            <>
+              <p className="mb-2 text-xs text-stone-500">Optional intro above the chart:</p>
+              <WikiEditor
+                content={section.content || "<p></p>"}
+                onChange={(html) => onUpdate(section.id, { content: html })}
+                placeholder="Intro text..."
+                className="mb-4"
+              />
+              {section.chart ? (
+                <WikiChartEditor
+                  chart={section.chart}
+                  onChange={(chart) => onUpdate(section.id, { chart })}
+                />
+              ) : null}
+            </>
+          ) : (
+            <>
+              <WikiEditor
+                content={section.content}
+                onChange={(html) => onUpdate(section.id, { content: html })}
+              />
 
-          {(section.children ?? []).map((subsection) => (
-            <SubsectionEditor
-              key={subsection.id}
-              subsection={subsection}
-              onUpdate={(updates) => onUpdateSubsection(section.id, subsection.id, updates)}
-              onDelete={() => onDeleteSubsection(section.id, subsection.id)}
-            />
-          ))}
+              {(section.children ?? []).map((subsection) => (
+                <OutlineSectionEditor
+                  key={subsection.id}
+                  section={subsection}
+                  depth={0}
+                  onUpdate={onUpdateSection}
+                  onDelete={onDeleteSection}
+                  onAddChild={onAddSubsection}
+                />
+              ))}
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mt-3 text-stone-600"
-            onClick={() => onAddSubsection(section.id)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Subsection
-          </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-3 text-stone-600"
+                onClick={() => onAddSubsection(section.id)}
+              >
+                <Plus className="h-4 w-4" />
+                Add Subsection
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -246,97 +325,30 @@ export function WikiEditClient({
     }
   };
 
-  const addSection = () => {
-    setSections([
-      ...sections,
-      {
-        id: `section-${Date.now()}`,
-        title: "New Section",
-        content: "<p></p>",
-        children: [],
-      },
-    ]);
-  };
-
   const updateSection = useCallback((id: string, updates: Partial<WikiSection>) => {
-    setSections((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-    );
+    setSections((prev) => updateSectionById(prev, id, updates));
   }, []);
 
   const deleteSection = (id: string) => {
     if (confirm("Delete this section?")) {
-      setSections((prev) => prev.filter((s) => s.id !== id));
+      setSections((prev) => deleteSectionById(prev, id));
     }
   };
 
   const duplicateSection = (id: string) => {
     const section = sections.find((s) => s.id === id);
     if (section) {
-      setSections([
-        ...sections,
-        {
-          ...section,
-          id: `section-${Date.now()}`,
-          title: `${section.title} (copy)`,
-          children: section.children?.map((child) => ({
-            ...child,
-            id: `subsection-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          })),
-        },
-      ]);
+      setSections((prev) => [...prev, duplicateSectionTree(section)]);
     }
   };
 
-  const addSubsection = (sectionId: string) => {
-    setSections((prev) =>
-      prev.map((section) => {
-        if (section.id !== sectionId) return section;
-        const children = section.children ?? [];
-        return {
-          ...section,
-          children: [
-            ...children,
-            {
-              id: `subsection-${Date.now()}`,
-              title: "New Subsection",
-              content: "<p></p>",
-            },
-          ],
-        };
-      })
-    );
+  const addSubsection = (parentId: string) => {
+    setSections((prev) => addChildSection(prev, parentId, createSubsection()));
   };
 
-  const updateSubsection = (
-    sectionId: string,
-    subsectionId: string,
-    updates: Partial<WikiSubsection>
-  ) => {
-    setSections((prev) =>
-      prev.map((section) => {
-        if (section.id !== sectionId) return section;
-        return {
-          ...section,
-          children: (section.children ?? []).map((child) =>
-            child.id === subsectionId ? { ...child, ...updates } : child
-          ),
-        };
-      })
-    );
-  };
-
-  const deleteSubsection = (sectionId: string, subsectionId: string) => {
+  const deleteSubsection = (subsectionId: string) => {
     if (!confirm("Delete this subsection?")) return;
-    setSections((prev) =>
-      prev.map((section) => {
-        if (section.id !== sectionId) return section;
-        return {
-          ...section,
-          children: (section.children ?? []).filter((child) => child.id !== subsectionId),
-        };
-      })
-    );
+    setSections((prev) => deleteSectionById(prev, subsectionId));
   };
 
   const handleSave = async () => {
@@ -400,7 +412,9 @@ export function WikiEditClient({
         <h1 className="text-2xl font-bold">Edit: {title}</h1>
         <div className="flex gap-2">
           <Link href={`/wiki/${slug}`}>
-            <Button variant="outline" size="sm">Cancel</Button>
+            <Button variant="outline" size="sm">
+              Cancel
+            </Button>
           </Link>
           <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving ? "Saving..." : "Save"}
@@ -415,11 +429,7 @@ export function WikiEditClient({
         </div>
         <div className="space-y-2">
           <Label>Summary</Label>
-          <Textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={3}
-          />
+          <Textarea value={summary} onChange={(e) => setSummary(e.target.value)} rows={3} />
         </div>
         <div className="space-y-2">
           <Label>Edit summary</Label>
@@ -440,11 +450,7 @@ export function WikiEditClient({
       )}
 
       {!deviceModel && (
-        <WikiPagePhotoEditor
-          title={title}
-          coverImage={coverImage}
-          onChange={setCoverImage}
-        />
+        <WikiPagePhotoEditor title={title} coverImage={coverImage} onChange={setCoverImage} />
       )}
 
       <DndContext
@@ -462,8 +468,8 @@ export function WikiEditClient({
                 onDelete={deleteSection}
                 onDuplicate={duplicateSection}
                 onAddSubsection={addSubsection}
-                onUpdateSubsection={updateSubsection}
-                onDeleteSubsection={deleteSubsection}
+                onUpdateSection={updateSection}
+                onDeleteSection={deleteSubsection}
                 onToggleCollapse={(id) =>
                   setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }))
                 }
@@ -474,10 +480,20 @@ export function WikiEditClient({
         </SortableContext>
       </DndContext>
 
-      <Button type="button" variant="outline" className="mt-4" onClick={addSection}>
-        <Plus className="h-4 w-4" />
-        Add Section
-      </Button>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button type="button" variant="outline" onClick={() => setSections((prev) => [...prev, createContentSection()])}>
+          <Plus className="h-4 w-4" />
+          Add Section
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setSections((prev) => [...prev, createChartSection()])}
+        >
+          <Plus className="h-4 w-4" />
+          Add Chart Section
+        </Button>
+      </div>
     </div>
   );
 }
