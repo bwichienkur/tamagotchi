@@ -1,24 +1,17 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getApiSession } from "@/lib/session";
 import { z } from "zod";
+
+import { wikiSectionsSchema } from "@/lib/wiki-sections";
 
 const updateWikiSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
   coverImage: z.string().nullable().optional(),
-  sections: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      content: z.string(),
-      level: z.number().optional(),
-      children: z
-        .array(z.object({ id: z.string(), title: z.string(), content: z.string() }))
-        .optional(),
-    })
-  ),
+  sections: wikiSectionsSchema,
   editSummary: z.string().optional(),
 });
 
@@ -71,6 +64,8 @@ export async function PUT(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  const sectionsJson = data.sections as unknown as Prisma.InputJsonValue;
+
   const [updated] = await prisma.$transaction([
     prisma.wikiPage.update({
       where: { slug },
@@ -78,7 +73,7 @@ export async function PUT(
         title: data.title,
         summary: data.summary,
         ...(data.coverImage !== undefined && { coverImage: data.coverImage }),
-        sections: data.sections,
+        sections: sectionsJson,
         updatedById: session.user.id,
       },
     }),
@@ -87,7 +82,7 @@ export async function PUT(
         wikiPageId: existing.id,
         title: data.title,
         summary: data.summary,
-        sections: data.sections,
+        sections: sectionsJson,
         editedById: session.user.id,
         editSummary: data.editSummary ?? "Updated page",
       },
